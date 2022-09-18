@@ -1,0 +1,110 @@
+<div class="add-connection-block py-1 clearfix">
+    <form>
+        <input name="event" value="add_connection" style="display: none">
+        <div class="col-12">
+            <div class="col-12 col-md-6">
+                <div class="form-floating">
+                    <input type="text" name="alias" class="form-control" placeholder="connect_name">
+                    <label for="floatingPassword">Alias</label>
+                    <div class="invalid-feedback">
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="form-floating custom-select">
+                    <select class="form-select" name="db_system" id="floatingSelect"
+                            aria-label="Floating label select example">
+                        {% for db_system in db_systems %}
+                            <option value="{{ db_system.id }}">{{ db_system.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="floatingSelect">Database system</label>
+                    <div class="invalid-feedback">
+                        field is required
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="form-floating">
+                <input type="text" name="ip" class="form-control" placeholder="ip_server" required>
+                <label for="floatingPassword">IP</label>
+                <div class="invalid-feedback">
+                    field is required
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-2">
+            <div class="form-floating">
+                <input type="text" name="port" class="form-control" placeholder="port" required>
+                <label for="floatingPassword">Port</label>
+                <div class="invalid-feedback">
+                    field is required
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="form-floating">
+                <input type="text" name="db_login" class="form-control" placeholder="db_login" required>
+                <label for="floatingPassword">DB_Login</label>
+                <div class="invalid-feedback">
+                    field is required
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="form-floating">
+                <input type="password" name="db_password" class="form-control" placeholder="db_password" required>
+                <label for="floatingPassword">DB_Password</label>
+                <div class="invalid-feedback">
+                    field is required
+                </div>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="form-floating">
+                <input type="text" name="db_name" class="form-control" placeholder="database_name" required>
+                <label for="floatingPassword">DB_name</label>
+                <div class="invalid-feedback">
+                    field is required
+                </div>
+            </div>
+        </div>
+    </form>
+    <button type="button" id="add-connect-btn" data-target="connection" data-url="{% url 'connections:connections_post' %}"
+            class="btn btn-success"><i class="bi bi-plus-lg"></i></button>
+    <input type="text" style="display: none;" name="__all__" value="">
+    <div class="invalid-feedback">
+    </div>
+</div>
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th scope="col">#</th>
+        <th scope="col">Alias</th>
+        <th scope="col">Server</th>
+        <th scope="col">Database</th>
+        <th scope="col">System</th>
+        <th scope="col">Status</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for connection in connections %}
+        <tr>
+            <th scope="row">{{ forloop.counter }}</th>
+            <td>{{ connection.alias }}</td>
+            <td>{{ connection.ip }}</td>
+            <td>{{ connection.db_name }}</td>
+            <td>{{ connection.system }}</td>
+            <td class="td-status">
+                {{ connection.status }}
+                <div class="buttons">
+                    <button id="del-button" title="Удалить" data-target="connection" data-alias="{{ connection.alias }}" data-con_id="{{ connection.id }}"
+                            data-url="{% url 'connections:connections_post' %}"><i class="bi bi-x-lg"></i></button>
+                </div>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% include 'index/modal.html' %}

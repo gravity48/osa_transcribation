@@ -1,0 +1,23 @@
+this.$router.beforeEach(async (to, from) => {
+      if (to.name === 'Home') {
+        this.show_users_data = true;
+        $('#settings-href').css({'max-width': '0'});
+      } else {
+        this.show_users_data = false;
+        $('#settings-href').css({'max-width': $('#settings-href').prop('scrollWidth') + 'px'});
+      }
+    });
+
+const startDate = new Date();
+    const endDate = new Date(new Date().setDate(startDate.getDate() + 7));
+    this.date = [startDate, endDate];
+
+
+  computed: {
+    task_settings() {
+      let task = this.tasks.filter((task) => task.id === this.task_key_selected);
+      console.log(task);
+      console.log(task[0]);
+      return task[0];
+    }
+  }
