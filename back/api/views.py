@@ -1,14 +1,9 @@
-import json
-from connections.models import Connections, DatabaseSystems
-from connections.models import DatabaseSystems
-from django.contrib.auth.models import User, Group
 from django.conf import settings
-from tasks.models import Tasks, TaskType, ModelsList, StatusTasks
 from rest_framework import viewsets, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import *
-from . import serializers
+from . import serializers, filters
 
 
 # Create your views here.
@@ -25,12 +20,13 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ConnectionsViewSet(viewsets.ModelViewSet):
-    queryset = Connections.objects.all()
-    serializer_class = ConnectionSerializer
+    queryset = Connections.objects.all().order_by('-date')
+    serializer_class = serializers.ConnectionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filterset_class = filters.ConnectionsFilter
 
     def create(self, request, *args, **kwargs):
-        new_connection = self.queryset.get_or_create(**request.data)
+        new_connection = self.queryset.create(**request.data)
         return Response(self.serializer_class(new_connection).data, status=status.HTTP_201_CREATED)
 
     def destroy(self, request, pk=None, *args, **kwargs):
@@ -39,6 +35,14 @@ class ConnectionsViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Connections.DoesNotExist:
             return Response('Not Exist', status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        serializer = self.serializer_class(self.get_object(), request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(data=serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
 
 class DbSystemViewSet(viewsets.ReadOnlyModelViewSet):
@@ -49,7 +53,7 @@ class DbSystemViewSet(viewsets.ReadOnlyModelViewSet):
 
 class TasksTypeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = TaskType.objects.all()
-    serializer_class = serializers.TaskTypeSerializer
+    serializer_class = TaskTypeSerializer
 
 
 class ModelViewSet(viewsets.ReadOnlyModelViewSet):
@@ -58,7 +62,7 @@ class ModelViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class TaskViewSet(viewsets.ModelViewSet):
-    queryset = Tasks.objects.all()
+    queryset = Tasks.objects.all().order_by('-date')
     serializer_class = serializers.TasksSerializer
 
     def create(self, request, *args, **kwargs):
@@ -72,6 +76,15 @@ class TaskViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Tasks.DoesNotExist:
             return Response('No exists', status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, pk=None, *args, **kwargs):
+        serializer = self.serializer_class(self.get_object(), request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            print(serializer.errors)
+            return Response(data=serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
 
 class TasksView(APIView):

@@ -7,7 +7,7 @@ from celery.schedules import crontab
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'transcribing_web.settings')
 
-app = Celery('transcribing_web', broker='amqp://user:000092@172.17.0.1:5672')
+app = Celery('transcribing_web')
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.

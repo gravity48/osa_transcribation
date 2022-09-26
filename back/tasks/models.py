@@ -16,14 +16,14 @@ class StatusTasks(models.Model):
 
 
 class TaskType(models.Model):
-    type_name = models.TextField(max_length=100)
+    name = models.TextField(max_length=100)
 
     def __str__(self):
-        return f'{self.id}: {self.type_name}'
+        return f'{self.id}: {self.name}'
 
 
 class Tasks(models.Model):
-    db = models.ForeignKey(Connections, on_delete=models.CASCADE, null=True, blank=True)
+    db = models.ForeignKey(Connections, related_name='task', on_delete=models.CASCADE, null=True, blank=True)
     model = models.ForeignKey(ModelsList, on_delete=models.CASCADE, null=True, blank=True)
     task_type = models.ForeignKey(TaskType, on_delete=models.CASCADE, null=True, blank=True)
     status = models.ForeignKey(StatusTasks, default=TASK_STOPPED, on_delete=models.CASCADE)
@@ -38,4 +38,5 @@ class Tasks(models.Model):
     time_processing = models.IntegerField(default=200)
     force_stop = models.BooleanField(default=False)
     options = models.JSONField(default=dict)
+    date = models.DateTimeField(auto_now=True)
 

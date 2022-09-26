@@ -1,19 +1,17 @@
-import fdb, copy, datetime #idb
+import fdb, copy, datetime
 from functools import wraps
+import psycopg2
 from sqlalchemy import create_engine
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.orm.session import Session
 from sqlalchemy.dialects import registry
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import DatabaseError
-from sqlalchemy.sql import select
 from sqlalchemy import Integer, Text, Column, TIMESTAMP, ForeignKey, Sequence, String, Time, VARCHAR, BLOB, DateTime, \
     SmallInteger
-#from sqlalchemy.dialects.firebird.idb import FBDialect_idb
 
 Base = declarative_base()
 
-IB_LIB = '/opt/interbase/lib/libgds.so'
 LIMIT_QUERY = 10
 
 time_duration_max = datetime.time(0, 30, 0)
@@ -170,7 +168,7 @@ class PostworkDB:
         request_basis = session.query(SPR_SPEECH_TABLE.s_inckey).filter(SPR_SPEECH_TABLE.s_datetime >= period_from,
                                                                         SPR_SPEECH_TABLE.s_datetime <= period_to,
                                                                         SPR_SPEECH_TABLE.s_decryptinfo.is_(None),
-                                                                        SPR_SPEECH_TABLE.s_eventcode == 'GSM',
+                                                                        SPR_SPEECH_TABLE.s_eventcode.in_(self.codecs),
                                                                         SPR_SPEECH_TABLE.s_duration <= time_duration_max,
                                                                         SPR_SPEECH_TABLE.s_duration >= time_duration_min).order_by(
             SPR_SPEECH_TABLE.s_datetime)
@@ -181,8 +179,6 @@ class PostworkDB:
         else:
             return records, len(records)
 
-
-
     def try_connection(self):
         try:
             connection = self._engine.connect()
@@ -192,10 +188,9 @@ class PostworkDB:
             return False
 
     def connect(self):
-        # (idb.fbcore.DatabaseError, fdb.fbcore.DatabaseError)
-        if self._db_system == 'Interbase':
-            connect = idb.connect(dsn=self._dsn, user=self._user, password=self._password, charset=self._charset,
-                                  fb_library_name=IB_LIB)
+        connect = None
+        if self._db_system == 'Postgres':
+            connect = psycopg2.connect(dsn=self._dsn, user=self._user, password=self._password, charset=self._charset)
         elif self._db_system == 'Firebird':
             connect = fdb.connect(dsn=self._dsn, user=self._user, password=self._password,
                                   charset=self._charset)
@@ -211,15 +206,14 @@ class PostworkDB:
         self._charset = charset
         self._db_system = db_system
         self._is_connect = False
-        if db_system == 'Interbase':
-            connection_str = f'firebird+idb://{login}:{password}@{server}:{port}/{db_name}?' \
-                             f'fb_library_name={IB_LIB}&charset={charset}'
-
+        if db_system == 'Postgres':
+            connection_str = f'postgresql+psycopg2://{login}:{password}@{server}/{db_name}'
         elif db_system == 'Firebird':
             connection_str = f'firebird+fdb://{login}:{password}@{server}:{port}/{db_name}?&charset={charset}'
         self._engine = create_engine(connection_str)
         self.session_master = sessionmaker(bind=self._engine)
         self.cursor = None
+        self.codecs = ['GSM', ]
 
 
 if __name__ == '__main__':
