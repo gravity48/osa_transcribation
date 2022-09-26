@@ -1,92 +1,144 @@
 <template>
   <h1>Connections</h1>
   <div id="table-div">
-    <table>
-      <thead>
-      <tr>
-        <th class="counter">#</th>
-        <th>Alias</th>
-        <th>DB System</th>
-        <th>IP</th>
-        <th>DB Name</th>
-        <th>Status</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr v-for="(connection, index) in connections_list" :key="connection.id">
-        <td class="counter">{{ index + 1 }}</td>
-        <td>{{ connection.alias }}</td>
-        <td>{{ connection.db_system }}</td>
-        <td>{{ connection.ip }}</td>
-        <td>{{ connection.db_name }}</td>
-        <td>{{ connection.db_status }}</td>
-        <td></td>
-        <div class="button_group">
-          <button type="button" @click="refresh_connections">Refresh</button>
-          <button type="button" @click="delete_connections(connection.id)">Del</button>
+    <ul>
+      <li>
+        <div class="connection-header">
+          <p>#</p>
+          <p>Alias</p>
+          <p>DB System</p>
+          <p>IP</p>
+          <p>DB Name</p>
+          <p>Status</p>
+          <div class="button_group">
+            <button></button>
+            <button @click="add_connections">
+              <BootstrapIcon icon="clipboard2-plus"
+                             size="2x"/>
+            </button>
+            <button></button>
+          </div>
         </div>
-      </tr>
-      </tbody>
-    </table>
+      </li>
+      <li v-for="(connection, index) in connections_list" :key="connection.id">
+        <p>{{ index + 1 }}</p>
+        <p>{{ connection.alias }}</p>
+        <p>{{ filter_name(connection.db_system) }}</p>
+        <p>{{ connection.ip }}</p>
+        <p>{{ connection.db_name }}</p>
+        <p>{{ connection.db_status }}</p>
+        <div id='repeat-ico' class="button_group">
+          <button class="transform-rotate transform-rotate-45">
+            <BootstrapIcon icon="arrow-repeat" size="2x"/>
+          </button>
+          <button class="transform-rotate transform-rotate-45" @click="show_connection_settings(connection.id)">
+            <BootstrapIcon icon="gear" size="2x"/>
+          </button>
+          <button @click="delete_connections(connection.id)">
+            <BootstrapIcon icon="x-lg" size="2x"/>
+          </button>
+        </div>
+      </li>
+    </ul>
   </div>
-  <div class="modal-settings">
-    <form>
-      <input v-model="connection_form.alias" type="text" placeholder="Alias">
-      <select v-model="connection_form.db_system">
-        <option v-for="db_system in db_systems" :value="db_system.id" :key="db_system.id">{{ db_system.name }}
-        </option>
-      </select>
-      <input v-model="connection_form.ip" type="text" placeholder="Ip">
-      <input v-model="connection_form.port" type="text" placeholder="Port">
-      <input v-model="connection_form.db_login" type="text" placeholder="Login">
-      <input v-model="connection_form.db_password" type="text" placeholder="Password">
-      <input v-model="connection_form.db_name" type="text" placeholder="DB Name">
-      <button type="button" @click="set_connections">Commit</button>
-    </form>
+  <div class="modal-settings" :class="{modal_settings_show: show_modal === true}">
+    <div class="column">
+      <div class="col-content">
+        <div class="form-option">
+          <label for="alias"><span class="input-header">Название подключения</span> <br> <span class="input-detail">Подключение будет отбражаться в общем списке</span></label>
+          <input v-model="connection_form.alias" type="text" placeholder="Alias">
+        </div>
+        <div class="form-option">
+          <label for="db_systems"><span class="input-header">СУБД</span><br> <span class="input-detail">Выберите целевую СУБД</span></label>
+          <v-select v-model="connection_form.db_system" label="name" :options="db_systems"></v-select>
+        </div>
+        <div class="form-option">
+          <label for="ip"><span class="input-header">IP</span> <br> <span class="input-detail">Введите IP адрес сервера БД</span>
+          </label>
+          <input v-model="connection_form.ip" type="text">
+        </div>
+        <div class="form-option">
+          <label for="port"><span class="input-header">Порт</span><br> <span class="input-detail">Введите порт сервера БД</span></label>
+          <input v-model="connection_form.port" type="text">
+        </div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="col-content">
+        <div class="form-option">
+          <label for="db_login"><span class="input-header">Логин</span><br><span class="input-detail">Логин базы данных</span></label>
+          <input v-model="connection_form.db_login" type="text">
+        </div>
+        <div class="form-option">
+          <label for="db_password"><span class="input-header">Пароль</span><br><span class="input-detail">Пароль базы данных</span></label>
+          <input v-model="connection_form.db_password" type="password">
+        </div>
+        <div class="form-option">
+          <label for="db_name"><span class="input-header">База данных</span> <br><span class="input-detail">Имя (путь) к базе данных (схеме)</span></label>
+          <input v-model="connection_form.db_name" type="text">
+        </div>
+        <div class="form-option">
+          <label for="db_name"><span class="input-header">Пост</span> <br><span class="input-detail">Фильтрация по полю пост в базе данных спрут</span></label>
+          <input v-model="connection_form.options.post" type="text">
+        </div>
+      </div>
+    </div>
+    <div id="modal-close">
+      <button class="modal-close-btn" @click="show_modal = false">
+        <BootstrapIcon icon="x" size="2x"></BootstrapIcon>
+      </button>
+    </div>
   </div>
 </template>
 
 <script>
 import ViewService from "@/services/view-service";
+import BootstrapIcon from '@dvuckovic/vue3-bootstrap-icons';
+import axios from "axios";
+import vSelect from "vue-select";
 import $ from 'jquery';
-import event_list from "@/assets/js/comp";
+
 
 export default {
   name: "ConnectionsView",
+  components: {
+    BootstrapIcon,
+    vSelect,
+  },
   data() {
     return {
-      connection_form:{
-        alias: '',
-        db_system: '',
-        ip: '',
-        port: '',
-        db_login: '',
-        db_password: '',
-        db_name: ''
+      connection_form: {
+        options: {},
       },
-      'connections_list': '',
-      'db_systems': '',
+      show_modal: false,
+      connections_list: [],
+      db_systems: [],
     }
   },
   mounted() {
-    this.show_connections();
-  },
-  props:{
-    show_modal: Boolean,
+    this.get_connections();
+    this.get_db_systems();
   },
   methods: {
-    show_connections() {
+    get_db_systems() {
+      ViewService.get_db_systems().then(response => {
+        this.db_systems = response.data;
+      }).catch(error => {
+        console.log(error);
+      });
+    },
+    show_connection_settings(id) {
+      this.connection_form = this.connections_list.filter((cnnct) => cnnct.id === id)[0];
+      this.show_modal = true;
+    },
+    get_connections() {
       ViewService.get_connections().then(response => {
         this.connections_list = response.data;
       });
-      ViewService.get_db_systems().then(response => {
-        this.db_systems = response.data;
-        this.connection_form.db_system = this.db_systems[0]['id'];
-      });
     },
-    set_connections() {
-      ViewService.add_connections(this.connection_form).then(response => {
-        this.show_connections();
+    add_connections() {
+      ViewService.add_connections().then(response => {
+        this.get_connections();
       });
     },
     refresh_connections(e) {
@@ -94,13 +146,33 @@ export default {
         'event': 'refresh',
         'id': e.currentTarget.getAttribute('data-item'),
       }
-      ViewService.refresh_connections(data).then();
+      ViewService.refresh_connections(data).then(response => {
+        console.log(response.data);
+      });
     },
     delete_connections(id) {
       ViewService.delete_connections(id).then(response => {
-        this.show_connections();
+        this.get_connections();
       });
     },
+    filter_name(value){
+      if(value){
+        return value.name;
+      }
+      return null;
+    }
+  },
+  watch: {
+    connection_form:{
+      handler(newValue, oldValue){
+        ViewService.update_connections(newValue.id, newValue).then(response => {
+          console.log(response);
+        }).catch(error => {
+          console.log(error);
+        })
+      },
+      deep: true
+    }
   }
 }
 </script>
@@ -108,53 +180,89 @@ export default {
 <style scoped>
 @import "../assets/css/main";
 
-table {
+#table-div ul {
+  list-style-type: none;
+  padding: 0;
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+
+#table-div ul li {
+  display: flex;
   width: 100%;
 }
 
-table .counter {
-  max-width: 10px;
-  word-wrap: break-word;
+
+#table-div ul li:not(:first-child){
+  border: black 1px solid;
+  margin: 5px 0;
+  border-radius: 4px;
 }
 
-form {
+#table-div ul li:not(:first-child):hover{
+  cursor: pointer;
+  background: rgba(85, 85, 85, 0.2);
+}
+
+#table-div ul li p:first-child {
+  width: 5%;
+}
+
+#table-div ul li p {
+  width: 20%;
+}
+
+#table-div ul li .button_group {
+  flex-basis: 10%;
+}
+
+.button_group {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
+  justify-content: center;
+  align-items: center;
 }
 
-input, select, form > button {
-  height: 26px;
-  width: calc(50% - 12px);
+.button_group button:last-child{
+  color: red;
 }
-
-input {
-  display: block;
-  margin: 5px;
-  box-sizing: border-box;
-}
-
-input:focus {
-  border: 3px solid #555;
-}
-
-select {
-  margin: 5px;
-}
-
-form > button {
-  margin: 5px;
-}
-
-form > button:hover {
+#table-div ul li .button_group button {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  width: 30px;
+  margin: 0 3px;
+  height: 30px;
   cursor: pointer;
 }
 
-#table-div {
-  overflow: auto;
+#table-div ul li .button_group button svg {
+  width: 100%;
+  height: 100%;
+  margin-bottom: 0;
 }
 
+.transform-rotate svg {
+  transform: rotate(0deg);
+  transition: transform .2s ease-out;
+  transform-origin: center;
+}
 
+button.transform-rotate:hover.transform-rotate-45 svg {
+  transform: rotate(45deg);
+}
+
+.connection-header {
+  display: flex;
+  width: 100%;
+}
+
+.connection-header p {
+  width: 20%;
+}
+
+.connection-header p:first-child {
+  width: 5%;
+}
 
 
 </style>

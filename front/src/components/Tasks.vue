@@ -5,8 +5,9 @@
       <li>
         <div class="task-header"><p>#</p>
           <p>Alias</p>
-          <p>DB Alias</p>
+          <p>Alias DB</p>
           <p>Task Type</p>
+          <p>Model</p>
           <p>Process Count</p>
           <button type="button" class="add-task-button" @click="add_task">
             <BootstrapIcon
@@ -20,8 +21,9 @@
         <div class="task-header">
           <p>{{ index + 1 }}</p>
           <p>{{ task.alias }}</p>
-          <p>{{ task.db }}</p>
-          <p>{{ task.task_type }}</p>
+          <p>{{ filter_alias(task.db) }}</p>
+          <p>{{ filter_name(task.task_type) }}</p>
+          <p>{{filter_name(task.model)}}</p>
           <p>{{ task.thread_count }}</p>
           <button type="button" class="task-settings-detail" @click="show_task_settings(task.id)">
             <BootstrapIcon
@@ -41,8 +43,8 @@
         <div class="task-detail-panel">
           <h3>Task {{ task.alias }}</h3>
           <div class="task-detail--properties">
-            <p><span>From</span>{{ filtered_date(task.period_from) }}</p>
-            <p><span>To</span> {{ filtered_date(task.period_to) }}</p>
+            <p><span>From: </span>{{ filtered_date(task.period_from) }}</p>
+            <p><span>To: </span> {{ filtered_date(task.period_to) }}</p>
           </div>
         </div>
       </li>
@@ -59,40 +61,18 @@
           <label for="period-to"><span class="input-header">Фильтр по дате</span><br> <span class="input-detail">Период, за который необходимо произвести пердварительную обработку записей</span>
           </label>
           <div class="date-time-string"><span>С</span>
-            <Datepicker id="period-to" v-model="task_settings.date" locale="ru"/>
+            <Datepicker id="period-to" format="dd/MM/yyyy" v-model="task_settings.period_from" :maxDate="task_settings.period_to" locale="ru"/>
             <span>по</span>
-            <Datepicker id="period-from" v-model="task_settings.date" locale="ru"/>
+            <Datepicker id="period-from"  format="dd/MM/yyyy" v-model="task_settings.period_to" :minDate="task_settings.period_from" locale="ru"/>
           </div>
         </div>
         <div class="form-option">
           <label for="db_alias"><span class="input-header">База данных</span> <br> <span class="input-detail"> Выберите из списка базу данных для обработки</span></label>
-          <div class="custom-select">
-            <span>Hello</span>
-            <div class="custom-select-ico">
-            </div>
-            <input type="text" hidden>
-            <div class="custom-select-option">
-              <ul>
-                <li class="select-option" data-item="1">Hello</li>
-                <li class="select-option" data-item="2">World</li>
-              </ul>
-            </div>
-          </div>
+          <v-select v-model="task_settings.db" label="alias" :options="input_form.connections"></v-select>
         </div>
         <div class="form-option">
           <label for="task-type"> <span class="input-header">Задача обработчика</span> <br> <span class="input-detail"> Выберите из списка цель для обработки данных </span></label>
-          <div class="custom-select">
-            <span>{{this.task_settings.task_type}}</span>
-            <div class="custom-select-ico">
-            </div>
-            <input type="text" hidden v-model="this.task_settings.task_type">
-            <div class="custom-select-option">
-              <ul>
-                <li class="select-option" data-item="1">Hello</li>
-                <li class="select-option" data-item="2">World</li>
-              </ul>
-            </div>
-          </div>
+          <v-select label="name" v-model="task_settings.task_type" :options="input_form.tasks_type"></v-select>
         </div>
       </div>
     </div>
@@ -101,42 +81,31 @@
         <div class="form-option">
           <label for="model-id"><span class="input-header">Лингафонная модель </span> <br> <span class="input-detail">Выберите из списка модель обработки голоса в зависимости от языка </span>
           </label>
-          <div class="custom-select">
-            <span>Hello</span>
-            <div class="custom-select-ico">
-            </div>
-            <input type="text" hidden>
-            <div class="custom-select-option">
-              <ul>
-                <li class="select-option" data-item="1">Hello</li>
-                <li class="select-option" data-item="2">World</li>
-              </ul>
-            </div>
-          </div>
+          <v-select v-model="task_settings.model" label="name" :options="input_form.models"></v-select>
         </div>
         <div class="advanced-settings">
           <p class="advanced-settings-header">Расширенная настройка</p>
           <div class="form-option">
             <label for="time-process"><span class="input-header">Количество процессов</span> <br> <span
                 class="input-detail">Паралельная обработка ускоряет процесс транскрибации, но <br> большое количество фоновых процессов может повлиять на <br> производительность</span></label>
-            <input id="process-count" type="number" v-model="task_settings.threads" placeholder="Process count">
+            <input id="process-count" type="number" v-model="task_settings.thread_count" placeholder="Process count">
           </div>
           <div class="form-option">
             <label for="process-count"><span class="input-header">Таймаут процесса</span><br><span class="input-detail">Время в секундах, перед автоматическим завершением процесса</span>
             </label>
-            <input id='time-process' type="number" v-model="task_settings.time_process" placeholder="Time process">
+            <input id='time-process' type="number" v-model="task_settings.time_processing" placeholder="Time process">
           </div>
           <div class="form-option">
             <label for="process-count"><span class="input-header">Время активной речи</span><br><span
                 class="input-detail">Продолжительность времени в секундах, при которой сеанс может <br> нести информативную нагрузку</span>
             </label>
-            <input id='time-process' type="number" v-model="task_settings.time_process" placeholder="Time process">
+            <input id='time-process' type="number" v-model="task_settings.options.speech_time" placeholder="Time process">
           </div>
         </div>
       </div>
     </div>
     <div id="modal-close">
-      <button class="modal-close-btn" @click="hide_task_settings">
+      <button class="modal-close-btn" @click="show_modal = false">
         <BootstrapIcon icon="x" size="2x"></BootstrapIcon>
       </button>
     </div>
@@ -150,11 +119,14 @@ import TaskService from "@/services/task-service";
 import ViewService from "@/services/view-service";
 import axios from "axios";
 import BootstrapIcon from '@dvuckovic/vue3-bootstrap-icons';
+import vSelect from "vue-select";
+import 'vue-select/dist/vue-select.css';
 
 export default {
   name: "TasksView",
   components: {
     BootstrapIcon,
+    vSelect,
   },
   props: {},
   data() {
@@ -162,10 +134,15 @@ export default {
       loader: null,
       show_modal: false,
       tasks: [],
-      task_settings: {},
+      task_settings: {
+        options:{
+
+        }
+      },
       input_form: {
         models: [],
         tasks_type: [],
+        connections: [],
       }
     }
   },
@@ -175,9 +152,10 @@ export default {
   },
   methods: {
     init_input_form() {
-      axios.all([TaskService.get_models_list(), TaskService.get_tasks_type()]).then(axios.spread((...responses) => {
+      axios.all([TaskService.get_models_list(), TaskService.get_tasks_type(), TaskService.get_connections_list()]).then(axios.spread((...responses) => {
         this.input_form.models = responses[0].data;
         this.input_form.tasks_type = responses[1].data;
+        this.input_form.connections = responses[2].data;
       })).catch(errors => {
         console.log(errors);
       });
@@ -203,15 +181,46 @@ export default {
       this.task_settings = this.tasks.filter((task) => task.id === id)[0];
       this.show_modal = true;
     },
-    hide_task_settings() {
-      this.show_modal = false;
-    },
     filtered_date(value) {
       if (value) {
         return moment(String(value)).format('DD/MM/YYYY hh:mm')
       }
     },
+    filter_alias(value){
+      if(value){
+        return value.alias;
+      }
+      else{
+        return null;
+      }
+    },
+    filter_name(value){
+      if(value){
+        return value.name;
+      }
+      return null;
+    }
   },
+  computed:{
+    connections_options(){
+      let options = [];
+      for (const connect of this.input_form.connections){
+        options.push( connect.alias);
+      }
+      return options;
+    }
+  },
+  watch:{
+    task_settings: {
+      handler(newValue, oldValue){
+        TaskService.update_task(newValue.id, newValue).then(response => {
+          newValue = response.data;
+        }).catch(error => {
+        });
+      },
+      deep: true,
+    }
+  }
 }
 </script>
 
@@ -219,6 +228,16 @@ export default {
 @import "../assets/css/main";
 @import "../assets/css/select";
 
+.add-task-button{
+  margin: 0 30px;
+  width: 30px;
+  height: 30px;
+}
+
+.add-task-button svg{
+  width: 100%;
+  height: 100%;
+}
 .task-detail--properties {
   column-count: 3;
   width: 100%;
@@ -312,13 +331,13 @@ ul {
 }
 
 .task-table ul li .task-header p {
-  width: 20%;
+  flex-basis: 17%;
   margin: 0;
   line-height: 30px;
 }
 
 .task-table ul li .task-header p:first-child {
-  width: 5%;
+  flex-basis: 5%;
 }
 
 .task-header button {
@@ -375,7 +394,6 @@ ul {
   position: relative;
   width: 30px;
   height: 30px;
-  margin-left: 5px;
 }
 
 .delete-task-btn:before, .delete-task-btn:after {
@@ -398,64 +416,8 @@ ul {
   display: inline-block;
 }
 
-.modal-settings {
-  display: flex;
-  align-items: flex-start;
-  box-sizing: border-box;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .2s ease-out;
-}
 
-.modal_settings_show {
-  opacity: 1;
-  pointer-events: auto;
-}
 
-#modal-close {
-  position: absolute;
-  width: 30px;
-  height: 30px;
-  top: 0;
-  right: 10px;
-  cursor: pointer;
-}
-
-#modal-close .modal-close-btn {
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  border: none;
-  background: transparent;
-}
-
-#modal-close svg {
-  width: 100%;
-  height: 100%;
-  color: red;
-}
-
-.column {
-  flex: 50%;
-  display: flex;
-  justify-content: center;
-}
-
-.column:first-child {
-  flex-direction: column;
-  align-items: center;
-  padding-right: 15px;
-}
-
-.column:last-child {
-  padding-left: 15px;
-
-}
-
-.column .col-content {
-  max-width: 500px;
-  width: 100%;
-}
 
 .date-time-string {
   display: flex;

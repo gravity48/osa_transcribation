@@ -21,3 +21,18 @@ const startDate = new Date();
       return task[0];
     }
   }
+
+           <!--
+           <label for="db_alias"><span class="input-header">База данных</span> <br> <span class="input-detail"> Выберите из списка базу данных для обработки</span></label>
+           <div class="custom-select">
+             <span>{{task_settings.connection}}</span>
+             <div class="custom-select-ico">
+             </div>
+             <input type="text" v-model="task_settings.connection" hidden>
+             <div class="custom-select-option">
+               <ul>
+                 <li v-for="connection in input_form.connections" :key="connection.id" class="select-option" data-item="{{connection.id}}">{{connection.alias}}</li>
+               </ul>
+             </div>
+           </div>
+           -->

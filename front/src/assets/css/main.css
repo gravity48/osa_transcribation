@@ -45,19 +45,6 @@ table tbody tr {
     position: relative;
 }
 
-table tbody tr .button_group {
-    position: absolute;
-    top: 0;
-    right: 0;
-    opacity: 0;
-    box-sizing: border-box;
-    margin-right: 10px;
-
-}
-
-table tbody tr .button_group button {
-    margin-right: 5px;
-}
 
 table tbody tr:hover .button_group {
     opacity: 1;
@@ -67,23 +54,64 @@ table tbody tr:hover .button_group {
     border-color: red;
 }
 
-.modal-settings{
+.input-header{
+    font-weight: bold;
+}
+
+
+
+.modal-settings {
     position: fixed;
     width: 100%;
     height: calc(100% - 65px);
-    display: none;
     top: 65px;
     left: 0;
     background: white;
     padding-top: 30px;
     overflow: auto;
-
+    display: flex;
+    align-items: flex-start;
+    box-sizing: border-box;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease-out;
 }
 
-.input-header{
-    font-weight: bold;
+.modal-settings .form-option > input{
+    outline: 0;
+    border-width: 0 0 2px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
+.modal_settings_show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#modal-close {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    top: 0;
+    right: 10px;
+    cursor: pointer;
+}
+
+#modal-close .modal-close-btn {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+#modal-close svg {
+    width: 100%;
+    height: 100%;
+    color: red;
+}
 .modal-settings .form-option{
     text-align: left;
     width: 100%;
@@ -103,18 +131,28 @@ table tbody tr:hover .button_group {
     font-style: italic;
 }
 
-.modal-settings input{
-    outline: 0;
-    border-width: 0 0 2px;
-    width: 100%;
-    box-sizing: border-box;
+.column {
+    flex: 50%;
+    display: flex;
+    justify-content: center;
 }
 
-.modal-settings select{
-    background: transparent;
-    border-width: 0 0 2px;
+.column:first-child {
+    flex-direction: column;
+    align-items: center;
+    padding-right: 15px;
+}
+
+.column:last-child {
+    padding-left: 15px;
+
+}
+
+.column .col-content {
+    max-width: 500px;
     width: 100%;
 }
+
 
 .form-option p{
     padding: 1px 2px;
