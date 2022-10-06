@@ -1,31 +1,20 @@
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="">
 <head>
-    {% include 'index/default_head.html' %}
-    <link rel="stylesheet" href="{% static 'index/css/blink_text.css' %}">
-    <link rel="stylesheet" href="{% static 'index/css/index.css' %}">
-    <link rel="stylesheet" href="{% static 'connections/css/connections.css'%}">
-    <script src="{% static 'index/js/index.js'%}"></script>
-    <script src="{% static 'connections/js/connections.js' %}"></script>
-    <script src="{% static 'tasks/js/tasks.js'%}"></script>
-    <title>Title</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="icon" href="{% static 'index/favicon.ico' %}">
+    <title>osa_transcrib</title>
+    <script defer="defer" src="{% static 'index/js/chunk-vendors.817ad316.js' %}"></script>
+    <script defer="defer" src="{% static 'index/js/app.83b67e1f.js' %}"></script>
+    <link href="{% static 'index/css/chunk-vendors.69a4a453.css' %}" rel="stylesheet">
+    <link href="{% static 'index/css/app.a5b0b706.css' %}" rel="stylesheet">
 </head>
 <body>
-<div id="sidebar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark">
-    {% include 'index/sidebar.html' %}
-</div>
-<div class="container-fluid">
-    <div class="row flex-nowrap">
-        <div id="fake-sidebar"></div>
-        <div id='content-block' class="col">
-            <h3>Left Sidebar with Submenus</h3>
-            <p class="lead">An example 2-level sidebar with collasible menu items. The menu functions like an "accordion" where only a single menu is be open at a time.</p>
-            <ul class="list-unstyled">
-                <li><h5>Responsive</h5> shrinks in width, hides text labels and collapses to icons only on mobile</li>
-            </ul>
-        </div>
-    </div>
-</div>
+<noscript><strong>We're sorry but osa_transcrib doesn't work properly without JavaScript enabled. Please enable it to
+    continue.</strong></noscript>
+<div id="app"></div>
 </body>
 </html>

@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@dvuckovic/vue3-bootstrap-icons": "^1.0.5",
+    "@kyvg/vue3-notification": "^2.4.1",
     "@vuepic/vue-datepicker": "^3.4.1",
     "assert": "^2.0.0",
     "axios": "^0.27.2",

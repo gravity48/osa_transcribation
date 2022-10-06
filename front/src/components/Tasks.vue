@@ -10,9 +10,11 @@
           <p>Model</p>
           <p>Process Count</p>
           <button type="button" class="add-task-button" @click="add_task">
-            <BootstrapIcon
-                icon="clipboard2-plus"
-                size="2x"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard2-plus" viewBox="0 0 16 16">
+              <path d="M9.5 0a.5.5 0 0 1 .5.5.5.5 0 0 0 .5.5.5.5 0 0 1 .5.5V2a.5.5 0 0 1-.5.5h-5A.5.5 0 0 1 5 2v-.5a.5.5 0 0 1 .5-.5.5.5 0 0 0 .5-.5.5.5 0 0 1 .5-.5h3Z"/>
+              <path d="M3 2.5a.5.5 0 0 1 .5-.5H4a.5.5 0 0 0 0-1h-.5A1.5 1.5 0 0 0 2 2.5v12A1.5 1.5 0 0 0 3.5 16h9a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 12.5 1H12a.5.5 0 0 0 0 1h.5a.5.5 0 0 1 .5.5v12a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-12Z"/>
+              <path d="M8.5 6.5a.5.5 0 0 0-1 0V8H6a.5.5 0 0 0 0 1h1.5v1.5a.5.5 0 0 0 1 0V9H10a.5.5 0 0 0 0-1H8.5V6.5Z"/>
+            </svg>
           </button>
         </div>
       </li>
@@ -26,21 +28,33 @@
           <p>{{filter_name(task.model)}}</p>
           <p>{{ task.thread_count }}</p>
           <button type="button" class="task-settings-detail" @click="show_task_settings(task.id)">
-            <BootstrapIcon
-                icon="gear"
-                size="2x"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-gear" viewBox="0 0 16 16">
+              <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
+              <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
+            </svg>
           </button>
           <button type="button" class="show-task-detail">
             <div></div>
             <div></div>
           </button>
+          <button type="button" v-if="task.status !== 'stopped'" @click="stop_task(task.id)">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-stop" viewBox="0 0 16 16">
+              <path d="M3.5 5A1.5 1.5 0 0 1 5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5zM5 4.5a.5.5 0 0 0-.5.5v6a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 .5-.5V5a.5.5 0 0 0-.5-.5H5z"/>
+            </svg>
+          </button>
+          <button type="button" v-if="task.status === 'stopped'"  @click="play_task(task.id)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-play-circle" viewBox="0 0 16 16">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+              <path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="task-detail-panel">
           <button type="button" class="delete-task-btn" :data-item="task.id" @click="del_task(task.id)">
             <div>
               <div></div>
             </div>
           </button>
-        </div>
-        <div class="task-detail-panel">
           <h3>Task {{ task.alias }}</h3>
           <div class="task-detail--properties">
             <p><span>From: </span>{{ filtered_date(task.period_from) }}</p>
@@ -105,8 +119,10 @@
       </div>
     </div>
     <div id="modal-close">
-      <button class="modal-close-btn" @click="show_modal = false">
-        <BootstrapIcon icon="x" size="2x"></BootstrapIcon>
+      <button class="modal-close-btn" @click="show_modal = false; this.show_tasks();">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x" viewBox="0 0 16 16">
+          <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+        </svg>
       </button>
     </div>
   </div>
@@ -114,18 +130,16 @@
 
 <script>
 import moment from 'moment';
-import $ from 'jquery';
+
 import TaskService from "@/services/task-service";
-import ViewService from "@/services/view-service";
 import axios from "axios";
-import BootstrapIcon from '@dvuckovic/vue3-bootstrap-icons';
 import vSelect from "vue-select";
 import 'vue-select/dist/vue-select.css';
+import api from "@/services/api";
 
 export default {
   name: "TasksView",
   components: {
-    BootstrapIcon,
     vSelect,
   },
   props: {},
@@ -143,6 +157,16 @@ export default {
         models: [],
         tasks_type: [],
         connections: [],
+      },
+      field_translation:{
+        'alias': 'Название обработчика',
+        'thread_count': 'Количество процессов',
+        'db': 'База данных',
+        'model': 'Лингафонная модель',
+        'task_type': 'Задача обработчика',
+        'period_from': 'Период До',
+        'period_to': 'Период После',
+        'time_processing': 'Таймаут процесса',
       }
     }
   },
@@ -176,6 +200,48 @@ export default {
       TaskService.del_task(id).then(response => {
         this.show_tasks();
       });
+    },
+    play_task(id){
+      TaskService.play_task(id).then(response => {
+        console.log(response);
+        this.$notify({
+          title: this.tasks.filter((task) => task.id === id)[0].alias,
+          type: 'success',
+          text: 'Запуск обработчика',
+          duration: 5000,
+        });
+        this.show_tasks();
+      }).catch(error => {
+        for (const [key, value] of Object.entries(error.response.data)) {
+          this.$notify({
+            title: this.field_translation[key],
+            text: value,
+            type: 'error',
+            duration: 5000,
+          });
+          this.show_tasks();
+        }
+      })
+    },
+    stop_task(id){
+      TaskService.stop_task(id).then(response => {
+        this.$notify({
+          title: this.tasks.filter((task) => task.id === id)[0].alias,
+          type: 'success',
+          text: 'Обработчик остановлен',
+          duration: 5000,
+        });
+        this.show_tasks();
+      }).catch(error =>{
+        this.$notify({
+          title: 'Сервер транскрибации',
+          text: 'Сервер транскрибации недоступен',
+          type: 'error',
+          duration: 5000,
+        });
+        this.show_tasks();
+      })
+
     },
     show_task_settings(id) {
       this.task_settings = this.tasks.filter((task) => task.id === id)[0];
@@ -214,8 +280,17 @@ export default {
     task_settings: {
       handler(newValue, oldValue){
         TaskService.update_task(newValue.id, newValue).then(response => {
-          newValue = response.data;
         }).catch(error => {
+          console.log(error);
+          this.task_settings = error.response.data.data;
+          for (const [key, value] of Object.entries(error.response.data.errors)) {
+            this.$notify({
+              type: 'error',
+              title: this.field_translation[key],
+              text: value,
+              duration: 5000
+            });
+          }
         });
       },
       deep: true,
@@ -227,6 +302,16 @@ export default {
 <style scoped>
 @import "../assets/css/main";
 @import "../assets/css/select";
+
+.task-header button{
+  width: 30px;
+  height: 30px;
+}
+
+.task-header button svg{
+  width: 100%;
+  height: 100%;
+}
 
 .add-task-button{
   margin: 0 30px;
@@ -279,12 +364,14 @@ form input, form select, #date-input, form button {
 }
 
 .task-detail-panel {
+  position: relative;
   display: flex;
   width: 100%;
   flex-wrap: wrap;
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.2s ease-out;
+  padding: 5px 0;
 }
 
 
@@ -391,9 +478,13 @@ ul {
 }
 
 .delete-task-btn {
-  position: relative;
-  width: 30px;
-  height: 30px;
+  position: absolute;
+  width: 23px;
+  height: 23px;
+  left: calc(100% - 39px);
+  background-color: transparent;
+  border: none;
+  top: 24px
 }
 
 .delete-task-btn:before, .delete-task-btn:after {
@@ -412,11 +503,13 @@ ul {
   transform: rotate(-45deg);
 }
 
+.delete-task-btn:hover{
+  cursor: pointer;
+}
+
 .dp__theme_light {
   display: inline-block;
 }
-
-
 
 
 .date-time-string {

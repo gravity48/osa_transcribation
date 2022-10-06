@@ -1,9 +1,14 @@
 from django.conf import settings
+from api.transcribation_server import TranscriptionServer
+from connections.models import ConnectionsStatus
 from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import *
 from . import serializers, filters
+from connections.models import DB_STATUS_ONLINE, DB_STATUS_OFFLINE
+from tasks.models import StatusTasks, TASK_IN_PROGRESS, TASK_STOPPED
 
 
 # Create your views here.
@@ -25,6 +30,29 @@ class ConnectionsViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     filterset_class = filters.ConnectionsFilter
 
+    @staticmethod
+    def check_connection(connection):
+        return True
+
+    @action(detail=True, methods=['get', ])
+    def refresh(self, request, pk=None, *args, **kwargs):
+        instanse = self.get_object()
+        serializer = self.serializer_class(instanse)
+        custom_serializer = serializers.ConnectionRunSerializer(data=serializer.data)
+        if custom_serializer.is_valid():
+            if TranscriptionServer().check_connection(serializer.data):
+                instanse.db_status = ConnectionsStatus.objects.get(pk=DB_STATUS_ONLINE)
+                instanse.save()
+                return Response(status=status.HTTP_200_OK)
+            else:
+                instanse.db_status = ConnectionsStatus.objects.get(pk=DB_STATUS_OFFLINE)
+                instanse.save()
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+        else:
+            instanse.db_status = ConnectionsStatus.objects.get(pk=DB_STATUS_OFFLINE)
+            instanse.save()
+            return Response(data=custom_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     def create(self, request, *args, **kwargs):
         new_connection = self.queryset.create(**request.data)
         return Response(self.serializer_class(new_connection).data, status=status.HTTP_201_CREATED)
@@ -42,7 +70,11 @@ class ConnectionsViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(data=serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return Response(data=serializer.errors, status=status.HTTP_404_NOT_FOUND)
+            context = {
+                'data': self.serializer_class(self.get_object(), many=False).data,
+                'errors': serializer.errors
+            }
+            return Response(data=context, status=status.HTTP_404_NOT_FOUND)
 
 
 class DbSystemViewSet(viewsets.ReadOnlyModelViewSet):
@@ -65,6 +97,43 @@ class TaskViewSet(viewsets.ModelViewSet):
     queryset = Tasks.objects.all().order_by('-date')
     serializer_class = serializers.TasksSerializer
 
+    @action(detail=True, methods=['get', ])
+    def play_task(self, request, pk=None, *args, **kwargs):
+        task = self.get_object()
+        serializer = self.serializer_class(task, many=False)
+        run_serializer = serializers.TaskSerializerRun(data=serializer.data)
+        if run_serializer.is_valid():
+            data = serializer.data
+            connection_data = data.pop('db')
+            connection_model = ConnectionSerializer(instance=Connections.objects.get(pk=connection_data['id']))
+            data['db'] = connection_model.data
+            if TranscriptionServer().start_task(data):
+                task.status = StatusTasks.objects.get(pk=TASK_IN_PROGRESS)
+                task.save()
+                return Response(data={'success': True}, status=status.HTTP_200_OK)
+            else:
+                task.status = StatusTasks.objects.get(pk=TASK_STOPPED)
+                task.save()
+                return Response(data={'all': 'error text'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(data=run_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get', ])
+    def stop_task(self, request, pk=None, *args, **kwargs):
+        task = self.get_object()
+        if TranscriptionServer().stop_task({'id': task.id}):
+            task.status = StatusTasks.objects.get(pk=TASK_STOPPED)
+            task.save()
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get', ])
+    def status(self, request, pk=None, *args, **kwargs):
+        task = self.get_object()
+        print(task)
+
+
     def create(self, request, *args, **kwargs):
         alias = generate_hash()
         new_task = Tasks.objects.create(alias=alias)
@@ -83,46 +152,12 @@ class TaskViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(data=serializer.data, status=status.HTTP_201_CREATED)
         else:
-            print(serializer.errors)
-            return Response(data=serializer.errors, status=status.HTTP_404_NOT_FOUND)
+            context = {
+                'errors': serializer.errors,
+                'data': self.serializer_class(self.get_object(), many=False).data
+            }
+            return Response(data=context, status=status.HTTP_400_BAD_REQUEST)
 
-
-class TasksView(APIView):
-    @staticmethod
-    def _add_task(data):
-        ts = serializers.TasksSerializer(data=data)
-        if ts.is_valid():
-            ts.save()
-            return {'success': True}, settings.DEFAULT_SUCCESS_STATUS
-        else:
-            return ts.errors, settings.DEFAULT_ERROR_STATUS
-
-    @staticmethod
-    def _del_task(data):
-        try:
-            id = data['id']
-        except KeyError:
-            return {'error': 'no task id'}, settings.DEFAULT_ERROR_STATUS
-        Tasks.objects.get(pk=id).delete()
-        return {'success': True}, settings.DEFAULT_SUCCESS_STATUS
-
-    def get(self, request):
-        queryset = Tasks.objects.all()
-        serializer = serializers.TasksSerializer(queryset, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        try:
-            event = request.data['event']
-        except KeyError:
-            return Response(status=settings.DEFAULT_ERROR_STATUS)
-        if event == 'add_task':
-            response, status = self._add_task(request.data)
-            return Response(response, status=status)
-        if event == 'del_task':
-            response, status = self._del_task(request.data)
-            return Response(response, status=status)
-        return Response({'error': 'no event'}, status=settings.DEFAULT_ERROR_STATUS)
 
 
 

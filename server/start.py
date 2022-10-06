@@ -1,16 +1,18 @@
-import sys
+import json
 import time
-import copy
 import threading
+import sys
+import socketserver
 import multiprocessing
 from collections import namedtuple
 from connect_celery.database import PostworkDB
 from connect_celery.postgres_db import SettingsDB
+from decoder.decoder import postwork_decoder
 from datetime import datetime
 from loguru import logger
-from transcribing.models import TranscribingModel
-from decoder.decoder import postwork_decoder
-from transcribing.custom_process import CustomProcess
+from models import TranscribingModel
+from multiprocessing import Pool, Process, Queue, Semaphore, Value
+from custom_process import CustomProcess
 
 ModelTuple = namedtuple('ModelTuple', ['model', 'name'])
 
@@ -18,105 +20,91 @@ WorkProcess = namedtuple('WorkProcess', ['process', 'run_time'])
 
 DATETIME_FORMAT = '%Y-%m-%d %H:%M'
 
-LOG_PATH = 'logfiles/'
+LOG_PATH = 'logs/'
 
-FRAMERATE = 16000
-
-SLEEP_TIME = 10
-
-TASK_LIMIT = 100
-
-logger.remove()
-log = copy.deepcopy(logger)
+MODEL_PATH = 'models/'
 
 
-class TranscribingTask:
-    def control_process(self, event, time_processing, process_list):
-        def process_loop():
-            for item, work_process in enumerate(process_list):
-                if not work_process.process.is_alive():
-                    process_list.pop(item)
-                    break
-                time_delta = datetime.now() - work_process.run_time
-                time_live = time_delta.total_seconds()
-                if time_live > time_processing:
-                    work_process.process.terminate()
-                    process_list.pop(item)
-                    break
-
-        while not event.is_set():
-            force_stop = self.settings_db.get_force_stop(self.settings_record_id)
-            if force_stop:
-                for item, work_process in enumerate(process_list):
-                    work_process.process.terminate()
-                return
-            process_loop()
-        while len(process_list):
-            process_loop()
-
-    @staticmethod
+def transcribing_process(queue, is_run, db, models, alias, item, record_processed):
     def format_text(f_text, r_text, model_name):
         text_out = f'\r\n -------------{model_name}-------------- '
         text_out += f'\r\nR_Channel: {r_text} \r\nF_Channel: {f_text}'
         return text_out
 
-    def __init__(self, kwargs):
-        self.kwargs = kwargs
-        self.postwork_db_local = PostworkDB(kwargs['server'], kwargs['port'], kwargs['login'], kwargs['password'],
-                                            kwargs['db_name'], kwargs['db_system'], kwargs['charset'])
-        self.period_to = datetime.strptime(kwargs['period_to'], DATETIME_FORMAT)
-        self.period_from = datetime.strptime(kwargs['period_from'], DATETIME_FORMAT)
-        self.models = kwargs['models']
-        self.thread_count = kwargs['thread_count']
-        self.time_processing = kwargs['time_processing']
-        self.spk_model = kwargs['spk_model']
-        logger.remove()
-        logfile = kwargs['log']
-        # self.log = copy.deepcopy(logger)
-        # log.add(logfile, format='{time} {level} {message}', level='DEBUG', rotation='5Mb', compression='zip')
-        log.add(sys.stdout, format="{time} {level} {message}", level="INFO")
-        if 'write_result' in kwargs:
-            self.write_result = True
-            self.settings_db = SettingsDB(kwargs['settings_db_login'], kwargs['settings_db_pwd'],
-                                          kwargs['settings_db_host'], kwargs['settings_db_name'])
-            self.settings_record_id = kwargs['settings_record_id']
-
-    def handle_record(self, record_id, transcribing_models):
-        postwork_db = PostworkDB(self.kwargs['server'], self.kwargs['port'], self.kwargs['login'],
-                                 self.kwargs['password'],
-                                 self.kwargs['db_name'], self.kwargs['db_system'], self.kwargs['charset'])
-        postwork_db.mark_record(record_id)
-        data = postwork_db.read_data_from_id(record_id)
-        speech_decode = postwork_decoder(data[0][0], data[0][1], data[0][2])
-        text = ''
-        for transcribing_model in transcribing_models:
-            f_text, r_text = transcribing_model.model.recognize(speech_decode)
-            text += self.format_text(f_text, r_text, transcribing_model.name)
+    model_path = MODEL_PATH + models['path']
+    model = TranscribingModel(model_path)
+    model.train()
+    postwork_db = PostworkDB(db['ip'], db['port'], db['db_login'], db['db_password'], db['db_name'], db['db_system'])
+    while is_run.value:
+        record_id = queue.get()
+        try:
+            postwork_db.mark_record(record_id)
+            data = postwork_db.read_data_from_id(record_id)
+            speech_decode = postwork_decoder(data[0][0], data[0][1], data[0][2])
+            text = ''
+            f_text, r_text = model.recognize(speech_decode)
+            text += format_text(f_text, r_text, models['short_name'])
             # text_new = transcribing_model.model.text_from_wav('test123.wav')
-        postwork_db.add_comment_to_record(record_id, text)
-        log.info(f'Record {record_id} success')
-        pass
+            postwork_db.add_comment_to_record(record_id, text)
+            logger.bind(**alias).info(f'Thread: {item} Record {record_id} success')
+            record_processed.value = record_processed.value + 1
+        except Exception as e:
+            logger.bind(**alias).info(f'Thread: {item} Record {record_id} error')
+            continue
 
-    def _thread_start(self, records_list: list, thread_id, record_count):
-        log.info(f'Run transcribing thread: {thread_id}')
-        log.info(f'Train model thread: {thread_id}')
-        transcribing_models = []
-        for model in self.models:
-            transcribing_models.append(ModelTuple(TranscribingModel(model['path']), model['name']))
-            transcribing_models[-1].model.train()
-        self.settings_db.write_record_count(self.settings_record_id, record_count)
-        while len(records_list):
-            record_id = records_list.pop(-1)
-            log.info(f' Handle record id: {record_id[0]} thread: {thread_id}')
-            self.handle_record(record_id[0], transcribing_models)
-            print(record_id[0])
-            if self.write_result:
-                percent = int(((record_count - len(records_list)) * 100) / record_count)
-                self.settings_db.write_percent(self.settings_record_id, percent, record_id[0])
 
-    def _transcribing_proj_process(self, record, models):
-        self.handle_record(record[0], models)
-        pass
+def control_process(queue, is_run, db_init, period_from, period_to, *args, **kwargs):
+    limit = 10
+    db = PostworkDB(db_init['ip'], db_init['port'], db_init['db_login'], db_init['db_password'],
+                    db_init['db_name'], db_init['db_system'])
+    period_from = datetime.strptime(period_from, '%Y-%m-%dT%H:%M:%S')
+    period_to = datetime.strptime(period_to, '%Y-%m-%dT%H:%M:%S')
+    records_list, record_count = db.read_records_list(period_to, period_from, db_init['options'], limit)
+    while records_list:
+        record = records_list.pop(-1)
+        db.mark_record_in_queue(record[0])
+        queue.put(record[0])
+        while 1:
+            if queue.qsize() < limit:
+                break
+            time.sleep(10)
+        if not records_list:
+            records_list, record_count = db.read_records_list(period_to, period_from, db_init['options'], limit)
+
+
+class TranscribingTask:
+    FRAMERATE = 16000
+    SLEEP_TIME = 10
+    TASK_LIMIT = 100
+
+    def __init__(self, db, model, task_type, alias, period_from, period_to, thread_count,
+                 time_processing, options, *args, **kwargs):
+        self.db_init = db
+        self.period_to = period_to
+        self.period_from = period_from
+        self.models = model
+        self.thread_count = thread_count
+        self.time_processing = time_processing
+        self.alias = {alias: True}
+        self.options = options
+        # self.spk_model = kwargs['spk_model']
+        self.log = f'logs/{alias}.log'
+        logger.add(self.log, filter=lambda record: alias in record["extra"], format="{time} {level} {message}",
+                   level="INFO")
+        self.process_pool = []
+        self.control_process = None
+        self.records_processed = Value('i', 0)
+
+    def stop(self):
+        self.control_process.kill()
+        for process in self.process_pool:
+            process.kill()
+
+    def status(self):
+        context = {
+            'record_processed': self.records_processed.value
+        }
+        return context
 
     def _speaker_identification_task(self, record_id, model: ModelTuple, spk_vector):
         postwork_db = PostworkDB(self.kwargs['server'], self.kwargs['port'], self.kwargs['login'],
@@ -126,168 +114,147 @@ class TranscribingTask:
         speech_decode = postwork_decoder(data[0][0], data[0][1], data[0][2])
         vector_r, vector_f = model.model.get_vectors_from_data(speech_decode)
         result = model.model.cosine_dist(vector_f, spk_vector)
-        print(result)
         pass
 
-    @log.catch
-    def run(self):
-        log.info('Run transcribing task')
-        log.info('Train model')
-        transcribing_models = []
-        for model in self.models:
-            transcribing_models.append(ModelTuple(TranscribingModel(model['path']), model['name']))
-            transcribing_models[-1].model.train()
-        log.info('Try read data from database')
-        while True:
-            records_list = self.postwork_db_local.read_records_list(self.period_to, self.period_from)
-            record_count = len(records_list)
-            log.info(f'Read {record_count} records')
-            threads = list()
-            for thread_id in range(self.thread_count):
-                threads.append(threading.Thread(target=self._thread_start,
-                                                args=(records_list, thread_id, record_count)))
-                threads[-1].start()
-            for thread in threads:
-                thread.join()
-            if datetime.now() > self.period_to:
-                break
-            time.sleep(SLEEP_TIME)
-        return True
+    def transcribing(self):
+        logger.bind(**self.alias).info('Run transcribing')
+        logger.bind(**self.alias).info('Run processes')
+        queue = Queue()
+        is_run = Value('i', 1)
+        for item in range(self.thread_count):
+            self.process_pool.append(
+                Process(target=transcribing_process,
+                        args=(queue, is_run, self.db_init, self.models, self.alias, item, self.records_processed)))
+            self.process_pool[-1].start()
+        logger.bind(**self.alias).info('Read data from database')
+        self.control_process = Process(target=control_process,
+                                       args=(queue, is_run, self.db_init, self.period_from, self.period_to))
+        self.control_process.start()
 
-    @log.catch
-    def run_with_thread(self, thread_count):
-        log.info('Run transcribing thread task')
-        log.info('Read data from database')
-        while datetime.now() < self.period_to:
-            threads = []
-            records_list: list = self.postwork_db_local.read_records_list(self.period_to, self.period_from, TASK_LIMIT)
-            for thread_id in range(thread_count):
-                threads.append(threading.Thread(target=self._thread_start,
-                                                args=(records_list, thread_id)))
-                threads[-1].start()
-            for thread in threads:
-                thread.join()
-        log.info('Wait files')
-        time.sleep(SLEEP_TIME)
-
-    @log.catch
-    def run_transcribing_process(self, process_count):
-        log.info('Run transcribing process')
-        log.info('Read data from database')
-        transcribing_models = []
-        for model in self.models:
-            transcribing_models.append(ModelTuple(TranscribingModel(model['path']), model['name']))
-            transcribing_models[-1].model.train()
-        log.info('Train transcribing models success')
-        records_list, record_count = self.postwork_db_local.read_records_list(self.period_to, self.period_from,
-                                                                              TASK_LIMIT)
-        self.settings_db.write_record_count(self.settings_record_id, record_count)
-        stop_event = threading.Event()
-        log.info('Run control thread')
-        processes = []
-        process_control_thread = threading.Thread(name='process_control', target=self.control_process,
-                                                  args=(stop_event, self.time_processing, processes))
-        process_control_thread.start()
-        log.info('Start process')
-        while records_list:
-            record = records_list.pop(-1)
-            log.info(f'Handle record id: {record[0]}')
-            while 1:
-                if self.settings_db.get_force_stop(self.settings_record_id):
-                    return
-                if len(processes) < process_count:
-                    work_process = WorkProcess(multiprocessing.Process(target=self._transcribing_proj_process,
-                                                                       args=(record, transcribing_models)),
-                                               datetime.now())
-                    work_process.process.start()
-                    processes.append(work_process)
-                    break
-                if self.write_result:
-                    percent = int(((record_count - len(records_list)) * 100) / record_count)
-                    self.settings_db.write_percent(self.settings_record_id, percent, record[0])
-            if not records_list:
-                records_list, record_count = self.postwork_db_local.read_records_list(self.period_to, self.period_from,
-                                                                                      TASK_LIMIT)
-        log.info('Wait files')
-        stop_event.set()
-        process_control_thread.join()
-
-    @log.catch
     def run_speaker_identification_process(self, process_count, filepath):
-        log.info('Run speaker identification process')
-        log.info('Train models')
+        logger.info('Run speaker identification process')
+        logger.info('Train models')
         transcribing_model = ModelTuple(TranscribingModel(self.models[0]['path']), self.models[1]['name'])
         transcribing_model.model.train()
         transcribing_model.model.set_spk_models(self.spk_model)
-        log.info('Train transcribing models success')
-        log.info('Get spk vector')
+        logger.info('Train transcribing models success')
+        logger.info('Get spk vector')
         spk_vector = transcribing_model.model.get_speaker_vector(filepath)
         records_list, record_count = self.postwork_db_local.read_records_list(self.period_to, self.period_from,
-                                                                              TASK_LIMIT)
+                                                                              self.TASK_LIMIT)
         while records_list:
             record = records_list.pop(-1)
-            log.info(f'Handle record id: {record[0]}')
+            logger.info(f'Handle record id: {record[0]}')
             self._speaker_identification_task(record[0], transcribing_model, spk_vector)
         pass
 
 
+class TranscribingServer(socketserver.BaseRequestHandler):
+    SOCKET_BUFFER = 10000
+    ATTEMPTS_COUNT = 10
+    TASK_RUNNING = {}
+
+    def send_error(self, error_text: str):
+        logger.debug(error_text)
+        context = {
+            'error': error_text,
+        }
+        self.send(context)
+
+    def send(self, context):
+        request = json.dumps(context, ensure_ascii=False).encode('utf8')
+        header = len(request).to_bytes(4, byteorder='big')
+        request = header + request
+        self.request.sendall(request)
+
+    def recv(self):
+        data = b""
+        iteration = 0
+        try:
+            pckg_lng_byte = self.request.recv(4)
+            package_lng = int.from_bytes(pckg_lng_byte, byteorder='big')
+            while iteration < self.ATTEMPTS_COUNT:
+                iteration += iteration  # increment iter number
+                buffer: bytes = self.request.recv(self.SOCKET_BUFFER)
+                data += buffer
+                if len(data) == package_lng:
+                    data_string = buffer.decode("utf-8")
+                    data_json = json.loads(data_string)
+                    del buffer
+                    return data_json
+        except UnicodeError:
+            self.send_error('Unicode Error')
+        except json.decoder.JSONDecodeError:
+            self.send_error('JSON Error')
+
+    def check_connection(self, data):
+        status = PostworkDB(**data).try_connection()
+        context = {
+            'status': status
+        }
+        self.send(context)
+
+    def start_task(self, data):
+        logger.info(data)
+        trascribing_task = TranscribingTask(**data)
+        trascribing_task.transcribing()
+        self.TASK_RUNNING[data['id']] = trascribing_task
+        context = {
+            'status': True
+        }
+        self.send(context)
+
+    def stop_task(self, data_json):
+        transcribing_task = self.TASK_RUNNING.pop(data_json['id'], None)
+        if transcribing_task:
+            transcribing_task.stop()
+            del transcribing_task
+        self.send({'status': True})
+
+    def status_task(self, data):
+        transcribing_task = self.TASK_RUNNING.pop(data['id'], None)
+        if transcribing_task:
+            context = transcribing_task.status()
+            self.send(context)
+        else:
+            self.send_error('no tasks')
+
+    def handle(self) -> None:
+        event = ''
+        try:
+            data_json: dict = self.recv()
+            event = data_json.pop('event')
+        except KeyError:
+            self.send_error('Command parse error')
+            return
+        if event == 'check_connection':
+            self.check_connection(data_json)
+        if event == 'start_task':
+            self.start_task(data_json)
+        if event == 'stop_task':
+            self.stop_task(data_json)
+        self.send_error('unknown event')
+        return
+
+
+class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    pass
+
+
 if __name__ == '__main__':
-    WORK_DIR = '/media/gravity/Data/PycharmProjects/transcribing_web'
-    kwargs = {
-        'server': '192.168.0.137',
-        'port': '3050',
-        'db_name': 'd:\\databases\\speaker2.ibs',
-        'login': 'sysdba',
-        'password': 'masterkey',
-        'db_system': 'Interbase',
-        'charset': 'WIN1251',
-        'period_from': '2021-09-01 00:00',
-        'period_to': '2022-10-31 00:00',
-        'models': [{'path': f'{WORK_DIR}/models/vosk-model-small-ru-0.22', 'name': 'RU'},
-                   {'path': f'{WORK_DIR}/models/vosk-model-small-uk-v3-small', 'name': 'UA'}],
-        'spk_model': f'{WORK_DIR}/models/vosk-model-spk-0.4',
-        'log': '/media/gravity/Data/PycharmProjects/transcribing_web/logfiles/123.log',
-        'write_result': True,
-        'settings_db_login': 'django',
-        'settings_db_pwd': 'django',
-        'settings_db_host': '127.0.0.1',
-        'settings_db_name': 'osa_transcribing',
-        'settings_record_id': 35,
-        'time_processing': 200,
-        'thread_count': 5,
-    }
+    HOST, PORT = "0.0.0.0", 4848
+    logger.info('Run server')
 
-    postwork_db = PostworkDB(kwargs['server'], kwargs['port'], kwargs['login'], kwargs['password'],
-                             kwargs['db_name'], kwargs['db_system'], kwargs['charset'])
-    postwork_db.unmark_all_records(1)
+    server = ThreadedTCPServer((HOST, PORT), TranscribingServer)
 
-    transcribing_task = TranscribingTask(kwargs)
-    transcribing_task.run_speaker_identification_process(1,
-                                                         '/media/gravity/Data/PycharmProjects/transcribing_web/transcribing/64.wav')
-    # transcribing_task.run_transcribing_process(2)
-    # transcribing_task.run_transcribing_process(2)
-    '''
-    decoder_speech = transcribing_task.run()
-
-    wav_binary = io.BytesIO(decoder_speech[1])
-    wf = wave.open(wav_binary, 'rb')
-    print(wf.getnchannels())
-    print(wf.getsampwidth())
-    print(wf.getcomptype())
-    print(wf.getframerate())
-
-    con = idb.connect(dsn='172.16.71.134:c:\\Databases\\TESTOVAYA_EMPTY.IBS', user='sysdba', password='masterkey',
-                      charset='WIN1251', fb_library_name='/lib/i386-linux-gnu/libgds.so')
-
-    cur = con.cursor()
-    # Execute the SELECT statement:
-    cur.execute("select * from spr_event")
-    result = cur.fetchall()
-    print(result)
-    if not os.path.exists("model-ru"):
-        print(
-            "Please download the model from https://github.com/alphacep/kaldi-android-demo/releases and unpack as 'model-en' in the current folder.")
-        exit(1)
-    '''
-
+    with server:
+        ip, port = server.server_address
+        # Start a thread with the server -- that thread will then start one
+        # more thread for each request
+        server_thread = threading.Thread(target=server.serve_forever)
+        # Exit the server thread when the main thread terminates
+        server_thread.daemon = True
+        server_thread.start()
+        logger.info(f'Server loop running in thread: {server_thread.name}')
+        server_thread.join()
 pass

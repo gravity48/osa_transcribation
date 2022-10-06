@@ -1,4 +1,4 @@
-*{
+* {
     box-sizing: border-box;
 
 }
@@ -50,14 +50,13 @@ table tbody tr:hover .button_group {
     opacity: 1;
 }
 
-.error{
+.error {
     border-color: red;
 }
 
-.input-header{
+.input-header {
     font-weight: bold;
 }
-
 
 
 .modal-settings {
@@ -77,11 +76,12 @@ table tbody tr:hover .button_group {
     transition: opacity .2s ease-out;
 }
 
-.modal-settings .form-option > input{
+.modal-settings .form-option > input {
     outline: 0;
     border-width: 0 0 2px;
     width: 100%;
     box-sizing: border-box;
+    font-size: 16px;
 }
 
 .modal_settings_show {
@@ -112,7 +112,8 @@ table tbody tr:hover .button_group {
     height: 100%;
     color: red;
 }
-.modal-settings .form-option{
+
+.modal-settings .form-option {
     text-align: left;
     width: 100%;
     padding: 5px;
@@ -120,13 +121,13 @@ table tbody tr:hover .button_group {
     margin-bottom: 25px;
 }
 
-.modal-settings label{
+.modal-settings label {
     display: block;
     font-size: 14px;
     margin-bottom: 10px;
 }
 
-.modal-settings label .input-detail{
+.modal-settings label .input-detail {
     font-size: 10px;
     font-style: italic;
 }
@@ -154,12 +155,12 @@ table tbody tr:hover .button_group {
 }
 
 
-.form-option p{
+.form-option p {
     padding: 1px 2px;
     margin: 0;
 }
 
-.advanced-settings{
+.advanced-settings {
     position: relative;
     border-radius: 5px;
     padding: 20px 10px;
@@ -176,23 +177,27 @@ table tbody tr:hover .button_group {
     padding: 0 15px;
 }
 
+
 @media screen and (max-width: 500px) {
-    .modal-settings{
+    .modal-settings {
         flex-direction: column;
         padding-bottom: 25px;
 
     }
-    .date-time-string{
+
+    .date-time-string {
         flex-wrap: wrap;
     }
-    .date-time-string span{
+
+    .date-time-string span {
         flex: 10%;
     }
-    .date-time-string .dp__theme_light{
+
+    .date-time-string .dp__theme_light {
         flex: 90%;
     }
 
-    .column{
+    .column {
         width: 100%;
         padding: 0 15px;
     }

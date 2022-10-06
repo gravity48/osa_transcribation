@@ -2,6 +2,7 @@ import binascii
 from datetime import datetime
 from django.db import models
 DB_STATUS_OFFLINE = 2
+DB_STATUS_ONLINE = 1
 
 
 def generate_hash():
@@ -29,6 +30,12 @@ class Connections(models.Model):
     db_password = models.CharField(max_length=100, null=True, blank=True)
     db_name = models.CharField(max_length=500, null=True, blank=True)
     db_status = models.ForeignKey(ConnectionsStatus, default=DB_STATUS_OFFLINE, on_delete=models.CASCADE)
-    date = models.DateTimeField(auto_now=True)
+    date = models.DateTimeField()
     options = models.JSONField(default=dict)
+
+    def save(self, *args, **kwargs):
+        if not self.id:
+            self.date = datetime.now()
+        return super().save(*args, **kwargs)
+
 

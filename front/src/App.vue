@@ -1,4 +1,6 @@
 <template>
+  <notifications position="bottom right">
+  </notifications>
   <router-view></router-view>
 </template>
 
@@ -46,4 +48,19 @@ html{
 body{
   margin: 0;
 }
+
+.vue-notification-wrapper{
+  height: 100px;
+  font-size: 14px;
+  margin: 0 0 2px 0 !important;
+}
+
+.vue-notification-template{
+  height: 100%;
+}
+
+.notification-title{
+  padding: 5px 0;
+}
+
 </style>

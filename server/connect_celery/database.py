@@ -32,7 +32,7 @@ def open_session(func):
 
 
 class SPR_SPEECH_TABLE(Base):
-    __tablename__ = 'SPR_SPEECH_TABLE'
+    __tablename__ = 'spr_speech_table'
     s_type = Column(SmallInteger)
     s_inckey = Column(Integer, primary_key=True, autoincrement=True)
     s_datetime = Column(DateTime)
@@ -85,7 +85,7 @@ class SPR_SPEECH_TABLE(Base):
 
 
 class SPR_EVENT(Base):
-    __tablename__ = 'SPR_EVENT'
+    __tablename__ = 'spr_event'
     val = Column(Integer, primary_key=True, autoincrement=True)
     val_name = Column(VARCHAR(50))
 
@@ -94,7 +94,7 @@ class SPR_EVENT(Base):
 
 
 class SPR_SP_DATA_1_TABLE(Base):
-    __tablename__ = 'SPR_SP_DATA_1_TABLE'
+    __tablename__ = 'spr_sp_data_1_table'
     s_inckey = Column(Integer, primary_key=True, autoincrement=True)
     s_order = Column(Integer)
     s_recordtype = Column(VARCHAR(30))
@@ -105,7 +105,7 @@ class SPR_SP_DATA_1_TABLE(Base):
 
 
 class SPR_SP_COMMENT_TABLE(Base):
-    __tablename__ = 'SPR_SP_COMMENT_TABLE'
+    __tablename__ = 'spr_sp_comment_table'
     s_inckey = Column(Integer, primary_key=True)
     s_comment = Column(BLOB)
 
@@ -132,6 +132,13 @@ class PostworkDB:
             sp_comment_table[0].s_comment += comment
         session.commit()
         return True
+
+    @open_session
+    def mark_record_in_queue(self, s_inckey, session: Session = None):
+        session.query(SPR_SPEECH_TABLE).filter(SPR_SPEECH_TABLE.s_inckey == s_inckey).update(
+            {'s_decryptinfo': 'in_queue'})
+        session.commit()
+        pass
 
     @open_session
     def mark_record(self, s_inckey, session: Session = None):
@@ -163,16 +170,18 @@ class PostworkDB:
         file.close()
         print(data)
 
-    def read_records_list(self, period_to, period_from, limit=None, offset=0):
+    def read_records_list(self, period_to, period_from, options, limit=None, offset=0):
         session = self.session_master()
         request_basis = session.query(SPR_SPEECH_TABLE.s_inckey).filter(SPR_SPEECH_TABLE.s_datetime >= period_from,
                                                                         SPR_SPEECH_TABLE.s_datetime <= period_to,
                                                                         SPR_SPEECH_TABLE.s_decryptinfo.is_(None),
                                                                         SPR_SPEECH_TABLE.s_eventcode.in_(self.codecs),
                                                                         SPR_SPEECH_TABLE.s_duration <= time_duration_max,
-                                                                        SPR_SPEECH_TABLE.s_duration >= time_duration_min).order_by(
-            SPR_SPEECH_TABLE.s_datetime)
-        records = request_basis.all()
+                                                                        SPR_SPEECH_TABLE.s_duration >= time_duration_min)
+        if 'post' in options:
+            request_basis.filter(SPR_SPEECH_TABLE.s_postid == options['post'])
+        records = request_basis.order_by(
+            SPR_SPEECH_TABLE.s_datetime).all()
         session.close()
         if limit:
             return records[offset:limit], len(records)
@@ -197,19 +206,18 @@ class PostworkDB:
         self._is_connect = True
         return connect
 
-    def __init__(self, server, port, login, password, db_name, db_system, charset='WIN1251'):
-        registry.register("firebird.idb", "sqlalchemy.dialects.firebird.idb", "FBDialect_idb")
+    def __init__(self, ip, port, db_login, db_password, db_name, db_system, charset='WIN1251', *args, **kwargs):
         connection_str = ''
-        self._dsn = f'{server}/{port}:{db_name}'
-        self._user = login
-        self._password = password
+        self._dsn = f'{ip}/{port}:{db_name}'
+        self._user = db_login
+        self._password = db_password
         self._charset = charset
         self._db_system = db_system
         self._is_connect = False
-        if db_system == 'Postgres':
-            connection_str = f'postgresql+psycopg2://{login}:{password}@{server}/{db_name}'
-        elif db_system == 'Firebird':
-            connection_str = f'firebird+fdb://{login}:{password}@{server}:{port}/{db_name}?&charset={charset}'
+        if db_system['name'] == 'Postgres':
+            connection_str = f'postgresql+psycopg2://{db_login}:{db_password}@{ip}:{port}/{db_name}'
+        elif db_system['name'] == 'Firebird':
+            connection_str = f'firebird+fdb://{db_login}:{db_password}@{ip}:{port}/{db_name}?&charset={charset}'
         self._engine = create_engine(connection_str)
         self.session_master = sessionmaker(bind=self._engine)
         self.cursor = None
@@ -217,8 +225,17 @@ class PostworkDB:
 
 
 if __name__ == '__main__':
-    serv = '172.16.71.133'
-    port = '3050'
-    user = 'SYSDBA'
-    password = 'masterkey'
-    db_name = 'c:\\databases\\TEMP_GSM.IBS'
+    serv = '127.0.0.1'
+    port = '5432'
+    user = 'admin'
+    password = '000092'
+    db_name = 'db_sprut'
+    db_postwork = PostworkDB(serv, port, user, password, db_name, {'name': 'Postgres'})
+    db_postwork.try_connection()
+    period_from = datetime.datetime.strptime('01-09-2022', '%d-%m-%Y')
+    period_to = datetime.datetime.strptime('30-10-2022', '%d-%m-%Y')
+    db_postwork.unmark_all_records()
+    data, record_count = db_postwork.read_records_list(period_to, period_from, {'post': 'POROZ'}, 100, 0)
+    print(data)
+    print(data[0][0])
+    print('ok')

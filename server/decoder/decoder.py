@@ -1,4 +1,3 @@
-import bitarray
 from decoder.GSM import gsm_to_wav
 
 

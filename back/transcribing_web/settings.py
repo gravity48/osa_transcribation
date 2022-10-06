@@ -11,8 +11,10 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 from datetime import timedelta
+from django.utils.translation import gettext_lazy as _
 from corsheaders.defaults import default_headers
 from pathlib import Path
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -119,6 +121,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+   # 'EXCEPTION_HANDLER': 'api.utils.custom_exception_handler',
 }
 
 SIMPLE_JWT = {
@@ -219,3 +222,11 @@ CELERY_BROKER_HOST = '172.17.0.1'
 CELERY_BROKER_PORT = 5672
 
 CELERY_RESULT_BACKEND = 'django-db'
+
+DEF_ERROR_MESSAGES = {
+    'invalid': _('Проверьте корректность поля'),
+    'required': _('Поле обязательно к заполнению'),
+    'null': _('Поле не может быть пустым'),
+    'unique': _('Поле должно быть уникальным'),
+    'blank': _('Поле не может быть пустым'),
+}

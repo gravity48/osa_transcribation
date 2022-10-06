@@ -38,40 +38,11 @@ def parse_event(func):
 post_decorators = [login_required, parse_event]
 
 
-@method_decorator(login_required, name='get')
-@method_decorator(post_decorators, name='post')
 class IndexView(generic.View):
     template_name = 'index/index.html'
 
-    @staticmethod
-    def _show_connections():
-        connect_view = ConnectionsView()
-        context = {
-            'success': True,
-            'render_content': connect_view.show(),
-        }
-        return context, settings.DEFAULT_SUCCESS_STATUS
-
-    @staticmethod
-    def _show_tasks():
-        tasks_view = TasksView()
-        context = {
-            'success': True,
-            'render_content': tasks_view.show(),
-        }
-        return context, settings.DEFAULT_SUCCESS_STATUS
-
     def get(self, request: HttpRequest):
         return render(request, self.template_name)
-
-    def post(self, request: HttpRequest, event: str, data):
-        if event == 'show_connections':
-            response, status = self._show_connections()
-            return JsonResponse(response, status=status)
-        if event == 'show_tasks':
-            response, status = self._show_tasks()
-            return JsonResponse(response, status=status)
-        return JsonResponse({'error': 'no event'}, status=settings.DEFAULT_ERROR_STATUS)
 
 
 

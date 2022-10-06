@@ -13,8 +13,8 @@ class ViewService{
     add_connections(){
         return api.post('connections/')
     }
-    refresh_connections(data){
-        return api.post('connections/', data)
+    refresh_connections(id){
+        return api.get('connections/' + id +'/refresh')
     }
     delete_connections(id){
         return api.delete('connections/' + id +'/')

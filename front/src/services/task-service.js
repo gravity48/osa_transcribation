@@ -20,6 +20,13 @@ class TaskService {
         return api.put(API_URL + id + '/', data)
     }
 
+    play_task(id){
+        return api.get(API_URL + id + '/play_task/', {})
+    }
+
+    stop_task(id){
+        return api.get(API_URL + id + '/stop_task/')
+    }
     get_tasks_type() {
         return api.get('tasks_type/')
     }

@@ -1,4 +1,6 @@
+from datetime import datetime
 from django.db import models
+from django.conf import settings
 from connections.models import Connections
 
 TASK_IN_PROGRESS = 1
@@ -31,12 +33,16 @@ class Tasks(models.Model):
     alias = models.CharField(max_length=100, unique=True)
     period_from = models.DateTimeField(blank=True, null=True)
     period_to = models.DateTimeField(blank=True, null=True)
-    log = models.CharField(max_length=300, blank=True, null=True)
     limit = models.IntegerField(default=1000)
     processed_record_id = models.IntegerField(default=0)
     thread_count = models.IntegerField(default=1)
     time_processing = models.IntegerField(default=200)
     force_stop = models.BooleanField(default=False)
     options = models.JSONField(default=dict)
-    date = models.DateTimeField(auto_now=True)
+    date = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        if not self.id:
+            self.date = datetime.now()
+        return super().save(*args, **kwargs)
 

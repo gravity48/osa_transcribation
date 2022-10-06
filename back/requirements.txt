@@ -50,3 +50,6 @@ typing-extensions==3.10.0.2
 vine==5.0.0
 vosk==0.3.30
 wcwidth==0.2.5
+
+djangorestframework~=3.13.1
+django-filter~=22.1
