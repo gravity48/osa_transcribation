@@ -40,14 +40,15 @@ class ConnectionsViewSet(viewsets.ModelViewSet):
         serializer = self.serializer_class(instanse)
         custom_serializer = serializers.ConnectionRunSerializer(data=serializer.data)
         if custom_serializer.is_valid():
-            if TranscriptionServer().check_connection(serializer.data):
+            server_status, context = TranscriptionServer().check_connection(serializer.data)
+            if server_status:
                 instanse.db_status = ConnectionsStatus.objects.get(pk=DB_STATUS_ONLINE)
                 instanse.save()
-                return Response(status=status.HTTP_200_OK)
+                return Response(data=context, status=status.HTTP_200_OK)
             else:
                 instanse.db_status = ConnectionsStatus.objects.get(pk=DB_STATUS_OFFLINE)
                 instanse.save()
-                return Response(status=status.HTTP_400_BAD_REQUEST)
+                return Response(data=context, status=status.HTTP_400_BAD_REQUEST)
         else:
             instanse.db_status = ConnectionsStatus.objects.get(pk=DB_STATUS_OFFLINE)
             instanse.save()
@@ -107,32 +108,40 @@ class TaskViewSet(viewsets.ModelViewSet):
             connection_data = data.pop('db')
             connection_model = ConnectionSerializer(instance=Connections.objects.get(pk=connection_data['id']))
             data['db'] = connection_model.data
-            if TranscriptionServer().start_task(data):
+            server_status, response = TranscriptionServer().start_task(data)
+            if server_status:
                 task.status = StatusTasks.objects.get(pk=TASK_IN_PROGRESS)
                 task.save()
-                return Response(data={'success': True}, status=status.HTTP_200_OK)
+                return Response(data=response, status=status.HTTP_200_OK)
             else:
                 task.status = StatusTasks.objects.get(pk=TASK_STOPPED)
                 task.save()
-                return Response(data={'all': 'error text'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(data=run_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get', ])
     def stop_task(self, request, pk=None, *args, **kwargs):
         task = self.get_object()
-        if TranscriptionServer().stop_task({'id': task.id}):
+        server_status, response = TranscriptionServer().stop_task({'id': task.id})
+        if server_status:
             task.status = StatusTasks.objects.get(pk=TASK_STOPPED)
             task.save()
-            return Response(status=status.HTTP_200_OK)
+            return Response(data=response, status=status.HTTP_200_OK)
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['get', ])
-    def status(self, request, pk=None, *args, **kwargs):
-        task = self.get_object()
-        print(task)
-
+    @action(detail=False, methods=['post', ])
+    def status(self, request, *args, **kwargs):
+        context = request.data
+        response = {'task_run': []}
+        for task in context['task_run']:
+            response['task_run'].append(task['id'])
+        server_status, response = TranscriptionServer().status_task(response)
+        if server_status:
+            return Response(data=response, status=status.HTTP_200_OK)
+        else:
+            return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
         alias = generate_hash()

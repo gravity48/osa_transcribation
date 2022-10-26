@@ -1,9 +1,11 @@
+import io
 import json
 import time
 import threading
 import sys
 import socketserver
 import multiprocessing
+import wave
 from collections import namedtuple
 from connect_celery.database import PostworkDB
 from connect_celery.postgres_db import SettingsDB
@@ -12,7 +14,9 @@ from datetime import datetime
 from loguru import logger
 from models import TranscribingModel
 from multiprocessing import Pool, Process, Queue, Semaphore, Value
-from custom_process import CustomProcess
+from pydub import AudioSegment
+from pydub.silence import split_on_silence
+from pydub.exceptions import CouldntDecodeError
 
 ModelTuple = namedtuple('ModelTuple', ['model', 'name'])
 
@@ -23,6 +27,46 @@ DATETIME_FORMAT = '%Y-%m-%d %H:%M'
 LOG_PATH = 'logs/'
 
 MODEL_PATH = 'models/'
+
+
+PauseIdentificationTaskType = 2
+TranscribingTaskType = 1
+
+
+def pause_identification_process(queue, is_run, db, alias, item, record_processed, time_min):
+    def get_duration(stream):
+        try:
+            sound = AudioSegment(stream)
+            audio_chunks = split_on_silence(sound, min_silence_len=100, silence_thresh=-45, keep_silence=50)
+            combined = AudioSegment.empty()
+            for chunk in audio_chunks:
+                combined += chunk
+            buf = io.BytesIO()
+            combined.export(buf, format='wav')
+            buf = buf.getvalue()
+            return combined.duration_seconds
+        except EOFError:
+            return 0
+        except CouldntDecodeError:
+            return 0
+
+    postwork_db = PostworkDB(db['ip'], db['port'], db['db_login'], db['db_password'], db['db_name'], db['db_system'])
+    while is_run.value:
+        record_id = queue.get()
+        try:
+            postwork_db.mark_record(record_id)
+            data = postwork_db.read_data_from_id(record_id)
+            f_speech, r_speech = postwork_decoder(data[0][0], data[0][1], data[0][2])
+            f_wav_duration = get_duration(f_speech)
+            r_wav_duration = get_duration(r_speech)
+            if (f_wav_duration < time_min) and (r_wav_duration < time_min):
+                postwork_db.mark_record_empty(record_id)
+            logger.bind(**alias).info(f'Thread: {item} Record {record_id} success')
+            record_processed.value = record_processed.value + 1
+        except Exception as e:
+            error = repr(e)
+            logger.bind(**alias).info(f'Thread: {item} Record {record_id} error:  {error}')
+        continue
 
 
 def transcribing_process(queue, is_run, db, models, alias, item, record_processed):
@@ -102,7 +146,8 @@ class TranscribingTask:
 
     def status(self):
         context = {
-            'record_processed': self.records_processed.value
+            'record_processed': self.records_processed.value,
+            'is_running': True,
         }
         return context
 
@@ -130,6 +175,22 @@ class TranscribingTask:
         self.control_process = Process(target=control_process,
                                        args=(queue, is_run, self.db_init, self.period_from, self.period_to))
         self.control_process.start()
+
+    def pause_identification(self):
+        logger.bind(**self.alias).info('Run pause identification')
+        logger.bind(**self.alias).info('Run processes')
+        queue = Queue()
+        is_run = Value('i', 1)
+        for item in range(self.thread_count):
+            self.process_pool.append(
+                Process(target=pause_identification_process,
+                        args=(queue, is_run, self.db_init, self.alias, item, self.records_processed, self.options['speech_time'])))
+            self.process_pool[-1].start()
+        logger.bind(**self.alias).info('Read data from database')
+        self.control_process = Process(target=control_process,
+                                       args=(queue, is_run, self.db_init, self.period_from, self.period_to))
+        self.control_process.start()
+        pass
 
     def run_speaker_identification_process(self, process_count, filepath):
         logger.info('Run speaker identification process')
@@ -197,6 +258,18 @@ class TranscribingServer(socketserver.BaseRequestHandler):
     def start_task(self, data):
         logger.info(data)
         trascribing_task = TranscribingTask(**data)
+        if data['task_type']['id'] == TranscribingTaskType:
+            trascribing_task.transcribing()
+        if data['task_type']['id'] == PauseIdentificationTaskType:
+            trascribing_task.pause_identification()
+        self.TASK_RUNNING[data['id']] = trascribing_task
+        context = {
+            'status': True
+        }
+        self.send(context)
+
+    def pause_del_task(self, data):
+        trascribing_task = TranscribingTask(**data)
         trascribing_task.transcribing()
         self.TASK_RUNNING[data['id']] = trascribing_task
         context = {
@@ -211,28 +284,37 @@ class TranscribingServer(socketserver.BaseRequestHandler):
             del transcribing_task
         self.send({'status': True})
 
-    def status_task(self, data):
-        transcribing_task = self.TASK_RUNNING.pop(data['id'], None)
-        if transcribing_task:
-            context = transcribing_task.status()
-            self.send(context)
-        else:
-            self.send_error('no tasks')
+    def status(self, data):
+        response = {}
+        for task_id in data['task_run']:
+            try:
+                transcribing_task = self.TASK_RUNNING[task_id]
+                context = transcribing_task.status()
+                response[task_id] = context
+            except KeyError:
+                response[task_id] = {'is_running': False}
+        self.send(response)
 
     def handle(self) -> None:
         event = ''
         try:
             data_json: dict = self.recv()
             event = data_json.pop('event')
-        except KeyError:
+        except (KeyError, AttributeError):
             self.send_error('Command parse error')
             return
         if event == 'check_connection':
             self.check_connection(data_json)
+            return
         if event == 'start_task':
             self.start_task(data_json)
+            return
         if event == 'stop_task':
             self.stop_task(data_json)
+            return
+        if event == 'status':
+            self.status(data_json)
+            return
         self.send_error('unknown event')
         return
 

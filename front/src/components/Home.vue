@@ -44,12 +44,13 @@
     </nav>
     <div id="content">
       <Greetings v-if="this.$store.state.activeTab === 'Home'" :username="username"/>
-      <router-view @show_users_data="(status) => show_users_data = status"></router-view>
+      <router-view @preloader="(show_preloader) => preloader = show_preloader"></router-view>
     </div>
   </div>
 </template>
 
 <script>
+
 import viewService from "@/services/view-service";
 import authService from "@/services/auth-service";
 import Greetings from "@/components/Greetings";
@@ -65,7 +66,8 @@ export default {
     return {
       'info': '',
       'username': String,
-      'is_staff': Boolean
+      'is_staff': Boolean,
+      'preloader': false,
     }
   },
   methods: {
@@ -195,6 +197,7 @@ export default {
   display: block;
   height: 100%;
 }
+
 
 
 </style>

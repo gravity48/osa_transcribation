@@ -1,4 +1,5 @@
 import api from "@/services/api";
+import api_without_preloader from "@/services/api_without_preloader";
 
 class ViewService{
     users_api(){
@@ -20,7 +21,7 @@ class ViewService{
         return api.delete('connections/' + id +'/')
     }
     update_connections(id, data){
-        return api.put('connections/' + id + '/', data)
+        return api_without_preloader.put('connections/' + id + '/', data)
     }
     get_alias(){
         return api.get('connections/alias/')

@@ -124,7 +124,8 @@ class PostworkDB:
 
     @open_session
     def add_comment_to_record(self, s_inckey, comment: str, session: Session = None):
-        comment = comment.encode('cp1251')
+        #comment = comment.encode('cp1251')
+        comment = comment.encode('UTF8')
         sp_comment_table: SPR_SP_COMMENT_TABLE = session.query(SPR_SP_COMMENT_TABLE).filter_by(s_inckey=s_inckey).all()
         if not sp_comment_table:
             session.add(SPR_SP_COMMENT_TABLE(s_inckey, comment))
@@ -147,6 +148,12 @@ class PostworkDB:
         pass
 
     @open_session
+    def mark_record_empty(self, s_inckey, session: Session = None):
+        session.query(SPR_SPEECH_TABLE).filter(SPR_SPEECH_TABLE.s_inckey == s_inckey).update({'s_notice': 'empty'})
+        session.commit()
+        pass
+
+    @open_session
     def unmark_record(self, s_inckey, session: Session = None):
         session.query(SPR_SPEECH_TABLE).filter(SPR_SPEECH_TABLE.s_inckey == s_inckey).update({'s_decryptinfo': None})
         session.commit()
@@ -159,6 +166,7 @@ class PostworkDB:
             sp_comment_tables = session.query(SPR_SP_COMMENT_TABLE).all()
             for sp_comment_table in sp_comment_tables:
                 sp_comment_table.s_comment = ''.encode('cp1251')
+        session.query(SPR_SPEECH_TABLE).update({'s_notice': None})
         session.commit()
         pass
 
@@ -234,7 +242,7 @@ if __name__ == '__main__':
     db_postwork.try_connection()
     period_from = datetime.datetime.strptime('01-09-2022', '%d-%m-%Y')
     period_to = datetime.datetime.strptime('30-10-2022', '%d-%m-%Y')
-    db_postwork.unmark_all_records()
+    db_postwork.unmark_all_records(1)
     data, record_count = db_postwork.read_records_list(period_to, period_from, {'post': 'POROZ'}, 100, 0)
     print(data)
     print(data[0][0])

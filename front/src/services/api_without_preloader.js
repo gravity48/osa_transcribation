@@ -1,16 +1,6 @@
 import axios from "axios";
 import TokenService from "@/services/token.service";
 
-function show_preloader(){
-    let preloader = document.getElementsByClassName('preloader')[0];
-    preloader.classList.remove("hidden");
-}
-
-function hide_preloader(){
-    var preloader = document.getElementsByClassName('preloader')[0];
-    preloader.classList.add("hidden");
-}
-
 const instance = axios.create({
     baseURL: "/api/",
     headers: {
@@ -25,21 +15,17 @@ instance.interceptors.request.use(
             config.headers["Authorization"] = 'Bearer ' + token;  // for Spring Boot back-end
             //config.headers["x-access-token"] = token; // for Node.js Express back-end
         }
-        show_preloader();
         return config;
     },
     (error) => {
-        hide_preloader();
         return Promise.reject(error);
     }
 );
 instance.interceptors.response.use(
     (res) => {
-        hide_preloader();
         return res;
     },
     async (err) => {
-        hide_preloader();
         const originalConfig = err.config;
         if (originalConfig.url !== "token/" && err.response) {
             // Access Token was expired
@@ -49,9 +35,6 @@ instance.interceptors.response.use(
                     refresh: TokenService.getLocalRefreshToken(),
                 }).then(response => {
                     TokenService.updateLocalAccessToken(response.data.access);
-                }).catch(error => {
-                    TokenService.removeUser();
-                    window.location.pathname = "login/";
                 });
                 return instance(originalConfig);
             }

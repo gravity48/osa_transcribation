@@ -1,4 +1,5 @@
 import api from "@/services/api";
+import api_without_preloader from "@/services/api_without_preloader";
 
 const API_URL = 'tasks/'
 
@@ -26,6 +27,9 @@ class TaskService {
 
     stop_task(id){
         return api.get(API_URL + id + '/stop_task/')
+    }
+    status_task(data){
+        return api_without_preloader.post(API_URL + 'status/', data)
     }
     get_tasks_type() {
         return api.get('tasks_type/')

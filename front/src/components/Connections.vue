@@ -111,6 +111,7 @@
       </button>
     </div>
   </div>
+
 </template>
 
 <script>
@@ -138,7 +139,8 @@ export default {
         'port': 'Порт',
         'db_login': 'Логин БД',
         'db_password': 'Пароль БД',
-        'db_name': 'База данных'
+        'db_name': 'База данных',
+        'transcribing_server': 'Сервер транскирибации',
       }
     }
   },
@@ -205,7 +207,7 @@ export default {
         return value.name;
       }
       return null;
-    }
+    },
   },
   watch: {
     connection_form: {
@@ -317,6 +319,7 @@ button.transform-rotate:hover.transform-rotate-45 svg {
 .connection-header p:first-child {
   width: 5%;
 }
+
 
 
 </style>

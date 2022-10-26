@@ -40,7 +40,6 @@ def gsm_decoder(speech_gsm):
     output_file += header
     # file_output = open('test50.amr', 'wb')
     # file_output.write(header)
-    pause_number = 0
     for item in range(0, len(speech_gsm), 34):
         delta_bytes = speech_gsm[item:item + 34]
         if delta_bytes[-1] == 0x18 and delta_bytes[-2] == 0x30:
@@ -49,12 +48,6 @@ def gsm_decoder(speech_gsm):
             continue
         delta_bit = bitarray.bitarray()
         delta_bit.frombytes(delta_bytes)
-        if delta_bit[264]:
-            pause_number += 1
-        else:
-            pause_number = 0
-        if pause_number >= 10:
-            continue
         speed = str(delta_bit[256]) + str(delta_bit[271]) + str(delta_bit[270])
         package_header = '001' + speed + '00'
         package_header = bitarray.bitarray(package_header)
