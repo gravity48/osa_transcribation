@@ -112,7 +112,7 @@ def control_process(queue, is_run, db_init, period_from, period_to, *args, **kwa
             if queue.qsize() < limit:
                 break
             time.sleep(5)
-        if not records_list:
+        while not records_list:
             records_list, record_count = db.read_records_list(period_to, period_from, db_init['options'], limit)
             time.sleep(5)
 
