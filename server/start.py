@@ -98,22 +98,23 @@ def transcribing_process(queue, is_run, db, models, alias, item, record_processe
 
 
 def control_process(queue, is_run, db_init, period_from, period_to, *args, **kwargs):
-    limit = 10
+    limit = 100
     db = PostworkDB(db_init['ip'], db_init['port'], db_init['db_login'], db_init['db_password'],
                     db_init['db_name'], db_init['db_system'])
     period_from = datetime.strptime(period_from, '%Y-%m-%dT%H:%M:%S')
     period_to = datetime.strptime(period_to, '%Y-%m-%dT%H:%M:%S')
     records_list, record_count = db.read_records_list(period_to, period_from, db_init['options'], limit)
-    while records_list:
+    while is_run:
         record = records_list.pop(-1)
         db.mark_record_in_queue(record[0])
         queue.put(record[0])
         while 1:
             if queue.qsize() < limit:
                 break
-            time.sleep(10)
+            time.sleep(5)
         if not records_list:
             records_list, record_count = db.read_records_list(period_to, period_from, db_init['options'], limit)
+            time.sleep(5)
 
 
 class TranscribingTask:
