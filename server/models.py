@@ -2,10 +2,16 @@ import io
 import json
 import wave
 import numpy as np
+import re
 from vosk import Model, KaldiRecognizer, SpkModel
 
 
 class TranscribingModel:
+
+    @staticmethod
+    def clean_text(text):
+        text_clear = re.sub(r'[\s|\n]', '', text)
+        return text_clear
 
     @staticmethod
     def cosine_dist(x, y):
@@ -78,6 +84,46 @@ class TranscribingModel:
         wav_text = json.loads(self.recognizer.FinalResult())['text']
         return wav_text
 
+    def _word_recognize(self, speech_data):
+        self.recognizer.SetWords(True)
+        self.recognizer.SetPartialWords(True)
+        wav_stream = io.BytesIO(speech_data)
+        wav_signal = wave.open(wav_stream, 'rb')
+        while True:
+            data = wav_signal.readframes(4000)
+            if not data:
+                break
+            self.recognizer.AcceptWaveform(data)
+        result_json = json.loads(self.recognizer.FinalResult())
+        conf = 0
+        try:
+            for word in result_json['result']:
+                conf += word['conf']
+            conf = conf/len(result_json['result'])
+            return conf, result_json['text']
+        except Exception as e:
+            return 0, result_json['text']
+
+    def _keyword_recognize(self, speech_data, percent):
+        words = []
+        self.recognizer.SetWords(True)
+        self.recognizer.SetPartialWords(True)
+        wav_stream = io.BytesIO(speech_data)
+        wav_signal = wave.open(wav_stream, 'rb')
+        while True:
+            data = wav_signal.readframes(4000)
+            if not data:
+                break
+            self.recognizer.AcceptWaveform(data)
+        result_json = json.loads(self.recognizer.FinalResult())
+        try:
+            for word in result_json['result']:
+                if word['conf'] > percent:
+                    words.append(word['word'])
+            return words
+        except Exception as e:
+            return words
+
     def _vector_from_binary(self, speech_data):
         wav_stream = io.BytesIO(speech_data)
         wav_signal = wave.open(wav_stream, 'rb')
@@ -101,3 +147,16 @@ class TranscribingModel:
         del data
         return f_text, r_text
 
+    def recognize_chunk(self, data):
+        if data:
+            conf, text = self._word_recognize(data)
+            return conf, text
+        else:
+            return ''
+
+    def recognize_keyword(self, data, percent):
+        if data:
+            words = self._keyword_recognize(data, percent)
+            return words
+        else:
+            return []

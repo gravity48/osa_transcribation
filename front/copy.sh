@@ -1,4 +1,7 @@
 #!/bin/bash
+rm -R dist/
+rm -R node_modules/.cache/
+npm run build
 cp dist/index.html ../back/index/templates/index/
 rm ../back/index/static/index/css/*
 cp -R dist/css ../back/index/static/index/

@@ -1,22 +1,26 @@
 <template>
-  <h1>Connections</h1>
+  <h1>Подключения</h1>
   <div id="table-div">
     <ul>
       <li>
         <div class="connection-header">
           <p>#</p>
-          <p>Alias</p>
-          <p>DB System</p>
-          <p>IP</p>
-          <p>DB Name</p>
-          <p>Status</p>
+          <p>Название подключения</p>
+          <p>СУБД</p>
+          <p>IP адрес</p>
+          <p>Название БД</p>
+          <p>Статус</p>
           <div class="button_group">
             <button></button>
             <button @click="add_connections">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard2-plus" viewBox="0 0 16 16">
-                <path d="M9.5 0a.5.5 0 0 1 .5.5.5.5 0 0 0 .5.5.5.5 0 0 1 .5.5V2a.5.5 0 0 1-.5.5h-5A.5.5 0 0 1 5 2v-.5a.5.5 0 0 1 .5-.5.5.5 0 0 0 .5-.5.5.5 0 0 1 .5-.5h3Z"/>
-                <path d="M3 2.5a.5.5 0 0 1 .5-.5H4a.5.5 0 0 0 0-1h-.5A1.5 1.5 0 0 0 2 2.5v12A1.5 1.5 0 0 0 3.5 16h9a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 12.5 1H12a.5.5 0 0 0 0 1h.5a.5.5 0 0 1 .5.5v12a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-12Z"/>
-                <path d="M8.5 6.5a.5.5 0 0 0-1 0V8H6a.5.5 0 0 0 0 1h1.5v1.5a.5.5 0 0 0 1 0V9H10a.5.5 0 0 0 0-1H8.5V6.5Z"/>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                   class="bi bi-clipboard2-plus" viewBox="0 0 16 16">
+                <path
+                    d="M9.5 0a.5.5 0 0 1 .5.5.5.5 0 0 0 .5.5.5.5 0 0 1 .5.5V2a.5.5 0 0 1-.5.5h-5A.5.5 0 0 1 5 2v-.5a.5.5 0 0 1 .5-.5.5.5 0 0 0 .5-.5.5.5 0 0 1 .5-.5h3Z"/>
+                <path
+                    d="M3 2.5a.5.5 0 0 1 .5-.5H4a.5.5 0 0 0 0-1h-.5A1.5 1.5 0 0 0 2 2.5v12A1.5 1.5 0 0 0 3.5 16h9a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 12.5 1H12a.5.5 0 0 0 0 1h.5a.5.5 0 0 1 .5.5v12a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-12Z"/>
+                <path
+                    d="M8.5 6.5a.5.5 0 0 0-1 0V8H6a.5.5 0 0 0 0 1h1.5v1.5a.5.5 0 0 0 1 0V9H10a.5.5 0 0 0 0-1H8.5V6.5Z"/>
               </svg>
             </button>
             <button></button>
@@ -101,12 +105,22 @@
           <label for="db_name"><span class="input-header">Пост</span> <br><span class="input-detail">Фильтрация по полю пост в базе данных спрут</span></label>
           <input v-model="connection_form.options.post" type="text">
         </div>
+        <div class="form-option">
+          <label for="db_name"><span class="input-header">Неотбор</span> <br><span class="input-detail">Фильтрация по записям мз неотбора (имя собеседника/имя источника не пусто)</span></label>
+          <div class="checkbox-with-label">
+            <input class="checkbox-with-label" v-model="connection_form.options.selection" type="checkbox"><span
+               v-if="connection_form.options.selection">Только неотбор</span><span
+               v-else>Все записи</span>
+          </div>
+        </div>
       </div>
     </div>
     <div id="modal-close">
       <button class="modal-close-btn" @click="show_modal = false; this.get_connections();">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x" viewBox="0 0 16 16">
-          <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x"
+             viewBox="0 0 16 16">
+          <path
+              d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
         </svg>
       </button>
     </div>
@@ -157,8 +171,8 @@ export default {
       });
     },
     show_connection_settings(id) {
-      for (const [item, connection] of Object.entries(this.connections_list)){
-        if (connection.id === id){
+      for (const [item, connection] of Object.entries(this.connections_list)) {
+        if (connection.id === id) {
           this.connection_form = this.connections_list[item]
           break;
         }
@@ -234,6 +248,19 @@ export default {
 <style scoped>
 @import "../assets/css/main";
 @import "bootstrap-icons/font/bootstrap-icons.css";
+
+.checkbox-with-label {
+  display: flex;
+}
+
+.checkbox-with-label > input {
+  height: 17px;
+  width: 17px;
+}
+.checkbox-with-label > span{
+  display: block;
+  margin: 3px 4px;
+}
 
 #table-div ul {
   list-style-type: none;
@@ -319,7 +346,6 @@ button.transform-rotate:hover.transform-rotate-45 svg {
 .connection-header p:first-child {
   width: 5%;
 }
-
 
 
 </style>

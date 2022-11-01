@@ -124,7 +124,7 @@ class PostworkDB:
 
     @open_session
     def add_comment_to_record(self, s_inckey, comment: str, session: Session = None):
-        #comment = comment.encode('cp1251')
+        # comment = comment.encode('cp1251')
         comment = comment.encode('UTF8')
         sp_comment_table: SPR_SP_COMMENT_TABLE = session.query(SPR_SP_COMMENT_TABLE).filter_by(s_inckey=s_inckey).all()
         if not sp_comment_table:
@@ -150,6 +150,16 @@ class PostworkDB:
     @open_session
     def mark_record_empty(self, s_inckey, session: Session = None):
         session.query(SPR_SPEECH_TABLE).filter(SPR_SPEECH_TABLE.s_inckey == s_inckey).update({'s_notice': 'empty'})
+        session.commit()
+        pass
+
+    @open_session
+    def mark_record_find_keyword(self, s_inckey, text, session: Session = None):
+        if text:
+            text = f'keyword: {text}'
+        else:
+            text = 'not_found'
+        session.query(SPR_SPEECH_TABLE).filter(SPR_SPEECH_TABLE.s_inckey == s_inckey).update({'s_notice': text})
         session.commit()
         pass
 
@@ -183,18 +193,23 @@ class PostworkDB:
         request_basis = session.query(SPR_SPEECH_TABLE.s_inckey).filter(SPR_SPEECH_TABLE.s_datetime >= period_from,
                                                                         SPR_SPEECH_TABLE.s_datetime <= period_to,
                                                                         SPR_SPEECH_TABLE.s_decryptinfo.is_(None),
-                                                                        SPR_SPEECH_TABLE.s_eventcode.in_(self.codecs),
                                                                         SPR_SPEECH_TABLE.s_duration <= time_duration_max,
                                                                         SPR_SPEECH_TABLE.s_duration >= time_duration_min)
         if 'post' in options:
-            request_basis.filter(SPR_SPEECH_TABLE.s_postid == options['post'])
-        records = request_basis.order_by(
-            SPR_SPEECH_TABLE.s_datetime).all()
-        session.close()
+            request_basis = request_basis.filter(SPR_SPEECH_TABLE.s_postid == options['post'])
+        if 'selection' in options:
+            request_basis = request_basis.filter(SPR_SPEECH_TABLE.s_talkername.is_(None),
+                                                 SPR_SPEECH_TABLE.s_sourcename.is_(None))
+        request_basis = request_basis.join(SPR_SP_DATA_1_TABLE,
+                                           SPR_SP_DATA_1_TABLE.s_inckey == SPR_SPEECH_TABLE.s_inckey).filter(
+            SPR_SP_DATA_1_TABLE.s_recordtype.in_(self.codecs))
+        request_basis = request_basis.order_by(
+            SPR_SPEECH_TABLE.s_datetime)
         if limit:
-            return records[offset:limit], len(records)
-        else:
-            return records, len(records)
+            request_basis = request_basis.limit(limit).offset(offset)
+        records = request_basis.all()
+        session.close()
+        return records, len(records)
 
     def try_connection(self):
         try:

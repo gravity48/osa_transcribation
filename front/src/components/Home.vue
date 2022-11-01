@@ -32,10 +32,10 @@
             <span id="logotype-proj-name">transcribation</span></router-link>
         </li>
         <li :class="{active: this.$store.state.activeTab === 'Connections' }">
-          <router-link :to="{name: 'Connections'}">Connections</router-link>
+          <router-link :to="{name: 'Connections'}">Подключения</router-link>
         </li>
         <li :class="{active: this.$store.state.activeTab === 'Tasks'}">
-          <router-link :to="{name: 'Tasks'}">Tasks</router-link>
+          <router-link :to="{name: 'Tasks'}">Задачи</router-link>
         </li>
         <li class="filler">
         </li>

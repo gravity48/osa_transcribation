@@ -28,7 +28,7 @@
           <p>{{ task.alias }}</p>
           <p>{{ filter_alias(task.db) }}</p>
           <p>{{ filter_name(task.task_type) }}</p>
-          <p>{{ filter_name(task.model) }}</p>
+          <p><span v-for="current_model in task.model" :key="current_model.id">{{ current_model.name }} &nbsp;</span></p>
           <p>{{ task.record_processed }}</p>
           <button type="button" class="task-settings-detail" @click="show_task_settings(task.id)">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-gear"
@@ -99,6 +99,10 @@
           <label for="task-type"> <span class="input-header">Задача обработчика</span> <br> <span class="input-detail"> Выберите из списка цель для обработки данных </span></label>
           <v-select label="name" v-model="task_settings.task_type" :options="input_form.tasks_type"></v-select>
         </div>
+        <div class="form-option">
+          <label for="task-type"> <span class="input-header">Список ключевых слов</span> <br> <span class="input-detail"> Введите ключевые слова, в каждой строчке новое слово</span></label>
+          <textarea v-model="task_settings.options.keywords"></textarea>
+        </div>
       </div>
     </div>
     <div class="column">
@@ -106,7 +110,7 @@
         <div class="form-option">
           <label for="model-id"><span class="input-header">Лингафонная модель </span> <br> <span class="input-detail">Выберите из списка модель обработки голоса в зависимости от языка </span>
           </label>
-          <v-select v-model="task_settings.model" label="name" :options="input_form.models"></v-select>
+          <v-select multiple v-model="task_settings.model" label="name" :options="input_form.models"></v-select>
         </div>
         <div class="advanced-settings">
           <p class="advanced-settings-header">Расширенная настройка</p>
@@ -125,6 +129,13 @@
                 class="input-detail">Продолжительность времени в секундах, при которой сеанс может <br> нести информативную нагрузку</span>
             </label>
             <input id='time-process' type="number" v-model="task_settings.options.speech_time"
+                   placeholder="Time process">
+          </div>
+          <div class="form-option">
+            <label for="process-count"><span class="input-header">Процент распознавания</span><br><span
+                class="input-detail">Процент при котором распознанное слово будет приниматься в результат <br> распознавания (указывется от 1 до 100)</span>
+            </label>
+            <input id='time-process' type="number" v-model="task_settings.options.recognize_percent"
                    placeholder="Time process">
           </div>
         </div>
@@ -186,8 +197,7 @@ export default {
   mounted() {
     this.show_tasks();
     this.init_input_form();
-    setInterval (this.status_tasks, 100)
-
+    setInterval(this.status_tasks, 2000);
   },
   methods: {
     init_input_form() {
@@ -264,8 +274,8 @@ export default {
           'task_run': this.running_task,
         }
         TaskService.status_task(data).then(response => {
-          for (const [key, value] of Object.entries(response.data)){
-            if (value.is_running !== false){
+          for (const [key, value] of Object.entries(response.data)) {
+            if (value.is_running !== false) {
               let key_int = parseInt(key)
               this.tasks.filter((task) => task['id'] === key_int)[0].record_processed = value.record_processed;
             }
@@ -334,6 +344,11 @@ export default {
 <style scoped>
 @import "../assets/css/main";
 @import "../assets/css/select";
+
+textarea{
+  width: 100%;
+  height: 100px;
+}
 
 .task-header button {
   width: 30px;

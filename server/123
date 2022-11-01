@@ -194,3 +194,12 @@
 2022-10-26T11:05:28.228121+0300 INFO Thread: 1 Record 99 success
 2022-10-26T11:05:29.241088+0300 INFO Thread: 1 Record 100 success
 2022-10-26T15:23:39.135660+0300 INFO Thread: 1 Record 1 success
+2022-10-31T15:53:53.253300+0300 INFO Thread: 1 Record 1 error: TypeError("'NoneType' object is not iterable")
+2022-10-31T15:54:21.362882+0300 INFO Thread: 1 Record 1 error: TypeError("'NoneType' object is not iterable")
+2022-10-31T16:05:47.737699+0300 INFO Thread: 1 Record 33 error: AttributeError("'dict' object has no attribute 'recognize'")
+2022-10-31T16:15:40.914761+0300 INFO Thread: 1 Record 46 error: AttributeError("'dict' object has no attribute 'recognize'")
+2022-10-31T16:53:49.812490+0300 INFO Thread: 1 Record 49 error: AttributeError("'dict' object has no attribute 'recognize'")
+2022-11-01T11:52:28.933784+0300 INFO Thread: 1 Record 19 error: TypeError("'NoneType' object is not subscriptable")
+2022-11-01T11:53:36.108454+0300 INFO Thread: 1 Record 19 error: TypeError("'NoneType' object is not subscriptable")
+2022-11-01T12:01:45.556007+0300 INFO Thread: 1 Record 22 success
+2022-11-01T12:13:31.013572+0300 INFO Thread: 1 Record 22 success

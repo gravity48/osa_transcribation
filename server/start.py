@@ -14,9 +14,7 @@ from datetime import datetime
 from loguru import logger
 from models import TranscribingModel
 from multiprocessing import Pool, Process, Queue, Semaphore, Value
-from pydub import AudioSegment
-from pydub.silence import split_on_silence
-from pydub.exceptions import CouldntDecodeError
+from recognize_func import get_durations, get_duration, format_text, search_keywords_in_list
 
 ModelTuple = namedtuple('ModelTuple', ['model', 'name'])
 
@@ -28,28 +26,12 @@ LOG_PATH = 'logs/'
 
 MODEL_PATH = 'models/'
 
-
+KeywordsIdentificationsTaskType = 3
 PauseIdentificationTaskType = 2
 TranscribingTaskType = 1
 
 
 def pause_identification_process(queue, is_run, db, alias, item, record_processed, time_min):
-    def get_duration(stream):
-        try:
-            sound = AudioSegment(stream)
-            audio_chunks = split_on_silence(sound, min_silence_len=100, silence_thresh=-45, keep_silence=50)
-            combined = AudioSegment.empty()
-            for chunk in audio_chunks:
-                combined += chunk
-            buf = io.BytesIO()
-            combined.export(buf, format='wav')
-            buf = buf.getvalue()
-            return combined.duration_seconds
-        except EOFError:
-            return 0
-        except CouldntDecodeError:
-            return 0
-
     postwork_db = PostworkDB(db['ip'], db['port'], db['db_login'], db['db_password'], db['db_name'], db['db_system'])
     while is_run.value:
         record_id = queue.get()
@@ -69,15 +51,33 @@ def pause_identification_process(queue, is_run, db, alias, item, record_processe
         continue
 
 
-def transcribing_process(queue, is_run, db, models, alias, item, record_processed):
-    def format_text(f_text, r_text, model_name):
-        text_out = f'\r\n -------------{model_name}-------------- '
-        text_out += f'\r\nR_Channel: {r_text} \r\nF_Channel: {f_text}'
-        return text_out
+def transcribing_process(queue, is_run, db, models, alias, item, record_processed, active_time):
+    TRAIN_MODELS = []
 
-    model_path = MODEL_PATH + models['path']
-    model = TranscribingModel(model_path)
-    model.train()
+    def text_from_chunks(chunks):
+        text_chunks = ''
+        if not chunks:
+            return ''
+        for chunk in chunks:
+            stream = io.BytesIO()
+            chunk.export(stream, format='wav')
+            chunk_wav = stream.getvalue()
+            conf_chunk = 0
+            text_chunk = ''
+            for train_model in TRAIN_MODELS:
+                conf, text = train_model.recognize_chunk(chunk_wav)
+                if conf > conf_chunk:
+                    text_chunk = text
+                    conf_chunk = conf
+            text_chunks += f'{text_chunk}  '
+        return text_chunks
+
+    for model in models:
+        model_path = MODEL_PATH + model['path']
+        train_model = TranscribingModel(model_path)
+        train_model.train()
+        TRAIN_MODELS.append(train_model)
+
     postwork_db = PostworkDB(db['ip'], db['port'], db['db_login'], db['db_password'], db['db_name'], db['db_system'])
     while is_run.value:
         record_id = queue.get()
@@ -85,15 +85,75 @@ def transcribing_process(queue, is_run, db, models, alias, item, record_processe
             postwork_db.mark_record(record_id)
             data = postwork_db.read_data_from_id(record_id)
             speech_decode = postwork_decoder(data[0][0], data[0][1], data[0][2])
-            text = ''
-            f_text, r_text = model.recognize(speech_decode)
-            text += format_text(f_text, r_text, models['short_name'])
+            status, chunks = get_durations(speech_decode[0], speech_decode[1], active_time)
+            if not status:
+                postwork_db.mark_record_empty(record_id)
+                continue
+            f_text = text_from_chunks(chunks[0])
+            r_text = text_from_chunks(chunks[1])
+            text = format_text(f_text, r_text, models['short_name'])
             # text_new = transcribing_model.model.text_from_wav('test123.wav')
             postwork_db.add_comment_to_record(record_id, text)
             logger.bind(**alias).info(f'Thread: {item} Record {record_id} success')
             record_processed.value = record_processed.value + 1
         except Exception as e:
-            logger.bind(**alias).info(f'Thread: {item} Record {record_id} error')
+            error = repr(e)
+            logger.bind(**alias).info(f'Thread: {item} Record {record_id} error: {error}')
+            continue
+
+
+def keyword_identification_process(queue, is_run, db, models, alias, item, record_processed, active_time, keywords,
+                                   percent):
+    TRAIN_MODELS = []
+
+    def format_text_list(words_list):
+        text = ''
+        for word in words_list:
+            text += f'{word} '
+        return text
+
+    def keyword_from_chunks(chunks):
+        words_chunks = []
+        if not chunks:
+            return []
+        for chunk in chunks:
+            stream = io.BytesIO()
+            chunk.export(stream, format='wav')
+            chunk_wav = stream.getvalue()
+            chunk_words = []
+            for train_model in TRAIN_MODELS:
+                words = train_model.recognize_keyword(chunk_wav, percent)
+                chunk_words += words
+            words_chunks += chunk_words
+        return words_chunks
+
+    for model in models:
+        model_path = MODEL_PATH + model['path']
+        train_model = TranscribingModel(model_path)
+        train_model.train()
+        TRAIN_MODELS.append(train_model)
+
+    postwork_db = PostworkDB(db['ip'], db['port'], db['db_login'], db['db_password'], db['db_name'], db['db_system'])
+    while is_run.value:
+        record_id = queue.get()
+        try:
+            postwork_db.mark_record(record_id)
+            data = postwork_db.read_data_from_id(record_id)
+            speech_decode = postwork_decoder(data[0][0], data[0][1], data[0][2])
+            status, chunks = get_durations(speech_decode[0], speech_decode[1], active_time)
+            if not status:
+                postwork_db.mark_record_empty(record_id)
+                continue
+            f_words = keyword_from_chunks(chunks[0])
+            r_words = keyword_from_chunks(chunks[1])
+            words = f_words + r_words
+            find_keywords = search_keywords_in_list(keywords, words)
+            postwork_db.mark_record_find_keyword(record_id, find_keywords)
+            logger.bind(**alias).info(f'Thread: {item} Record {record_id} success')
+            record_processed.value = record_processed.value + 1
+        except Exception as e:
+            error = repr(e)
+            logger.bind(**alias).info(f'Thread: {item} Record {record_id} error: {error}')
             continue
 
 
@@ -105,6 +165,9 @@ def control_process(queue, is_run, db_init, period_from, period_to, *args, **kwa
     period_to = datetime.strptime(period_to, '%Y-%m-%dT%H:%M:%S')
     records_list, record_count = db.read_records_list(period_to, period_from, db_init['options'], limit)
     while is_run:
+        while not records_list:
+            records_list, record_count = db.read_records_list(period_to, period_from, db_init['options'], limit)
+            time.sleep(5)
         record = records_list.pop(-1)
         db.mark_record_in_queue(record[0])
         queue.put(record[0])
@@ -112,15 +175,24 @@ def control_process(queue, is_run, db_init, period_from, period_to, *args, **kwa
             if queue.qsize() < limit:
                 break
             time.sleep(5)
-        while not records_list:
-            records_list, record_count = db.read_records_list(period_to, period_from, db_init['options'], limit)
-            time.sleep(5)
 
 
 class TranscribingTask:
     FRAMERATE = 16000
     SLEEP_TIME = 10
     TASK_LIMIT = 100
+
+    @staticmethod
+    def options_parse(options):
+        keywords = options.get('keywords', [])
+        if keywords:
+            keywords = keywords.split('\n')
+        try:
+            percent = options['recognize_percent']
+            percent /= 100
+        except KeyError:
+            percent = 0.9
+        return keywords, percent
 
     def __init__(self, db, model, task_type, alias, period_from, period_to, thread_count,
                  time_processing, options, *args, **kwargs):
@@ -132,6 +204,7 @@ class TranscribingTask:
         self.time_processing = time_processing
         self.alias = {alias: True}
         self.options = options
+        self.keywords, self.percent = self.options_parse(self.options)
         # self.spk_model = kwargs['spk_model']
         self.log = f'logs/{alias}.log'
         logger.add(self.log, filter=lambda record: alias in record["extra"], format="{time} {level} {message}",
@@ -170,7 +243,8 @@ class TranscribingTask:
         for item in range(self.thread_count):
             self.process_pool.append(
                 Process(target=transcribing_process,
-                        args=(queue, is_run, self.db_init, self.models, self.alias, item, self.records_processed)))
+                        args=(queue, is_run, self.db_init, self.models, self.alias, item, self.records_processed,
+                              self.options['active_time'])))
             self.process_pool[-1].start()
         logger.bind(**self.alias).info('Read data from database')
         self.control_process = Process(target=control_process,
@@ -185,13 +259,30 @@ class TranscribingTask:
         for item in range(self.thread_count):
             self.process_pool.append(
                 Process(target=pause_identification_process,
-                        args=(queue, is_run, self.db_init, self.alias, item, self.records_processed, self.options['speech_time'])))
+                        args=(queue, is_run, self.db_init, self.alias, item, self.records_processed,
+                              self.options['speech_time'])))
             self.process_pool[-1].start()
         logger.bind(**self.alias).info('Read data from database')
         self.control_process = Process(target=control_process,
                                        args=(queue, is_run, self.db_init, self.period_from, self.period_to))
         self.control_process.start()
         pass
+
+    def search_keywords(self):
+        logger.bind(**self.alias).info('Run search keywords')
+        logger.bind(**self.alias).info('Run processes')
+        queue = Queue()
+        is_run = Value('i', 1)
+        for item in range(self.thread_count):
+            self.process_pool.append(
+                Process(target=keyword_identification_process,
+                        args=(queue, is_run, self.db_init, self.models, self.alias, item, self.records_processed,
+                              self.options['speech_time'], self.keywords, self.percent)))
+            self.process_pool[-1].start()
+        logger.bind(**self.alias).info('Read data from database')
+        self.control_process = Process(target=control_process,
+                                       args=(queue, is_run, self.db_init, self.period_from, self.period_to))
+        self.control_process.start()
 
     def run_speaker_identification_process(self, process_count, filepath):
         logger.info('Run speaker identification process')
@@ -263,6 +354,8 @@ class TranscribingServer(socketserver.BaseRequestHandler):
             trascribing_task.transcribing()
         if data['task_type']['id'] == PauseIdentificationTaskType:
             trascribing_task.pause_identification()
+        if data['task_type']['id'] == KeywordsIdentificationsTaskType:
+            trascribing_task.search_keywords()
         self.TASK_RUNNING[data['id']] = trascribing_task
         context = {
             'status': True

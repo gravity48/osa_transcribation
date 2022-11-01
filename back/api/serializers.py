@@ -133,7 +133,7 @@ class ConnectionOptionSerializer(serializers.ModelSerializer):
 
 class TasksSerializer(serializers.ModelSerializer):
     db = ConnectionOptionSerializer(many=False, allow_null=True)
-    model = ModelListSerializer(many=False, allow_null=True)
+    model = ModelListSerializer(many=True, allow_null=True)
     task_type = TaskTypeSerializer(many=False, allow_null=True)
     status = serializers.SlugRelatedField(slug_field='status', read_only=True)
 
@@ -147,7 +147,11 @@ class TasksSerializer(serializers.ModelSerializer):
             if value is not None and attr == 'db':
                 value = Connections.objects.get(pk=value['id'])
             if value is not None and attr == 'model':
-                value = ModelsList.objects.get(pk=value['id'])
+                models_list = []
+                for model in value:
+                    models_list.append(ModelsList.objects.get(pk=model['id']))
+                instance.model.set(models_list)
+                continue
             if value is not None and attr == 'task_type':
                 value = TaskType.objects.get(pk=value['id'])
             setattr(instance, attr, value)
@@ -170,7 +174,7 @@ class TasksSerializer(serializers.ModelSerializer):
 
 class TaskSerializerRun(serializers.Serializer):
     db = ConnectionOptionSerializer(many=False, error_messages=settings.DEF_ERROR_MESSAGES)
-    model = ModelListSerializer(many=False, error_messages=settings.DEF_ERROR_MESSAGES)
+    model = ModelListSerializer(many=True, error_messages=settings.DEF_ERROR_MESSAGES)
     task_type = TaskTypeSerializer(many=False, error_messages=settings.DEF_ERROR_MESSAGES)
     status = serializers.CharField(error_messages=settings.DEF_ERROR_MESSAGES, validators=[stopped_task, ])
     celery_id = serializers.CharField(max_length=50, allow_null=True, error_messages=settings.DEF_ERROR_MESSAGES)

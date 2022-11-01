@@ -26,7 +26,7 @@ class TaskType(models.Model):
 
 class Tasks(models.Model):
     db = models.ForeignKey(Connections, related_name='task', on_delete=models.CASCADE, null=True, blank=True)
-    model = models.ForeignKey(ModelsList, on_delete=models.CASCADE, null=True, blank=True)
+    model = models.ManyToManyField(ModelsList, null=True, blank=True)
     task_type = models.ForeignKey(TaskType, on_delete=models.CASCADE, null=True, blank=True)
     status = models.ForeignKey(StatusTasks, default=TASK_STOPPED, on_delete=models.CASCADE)
     celery_id = models.CharField(max_length=50, blank=True, null=True)
