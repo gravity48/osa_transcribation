@@ -36,6 +36,7 @@ def silens_split(stream):
         combined = AudioSegment.empty()
         for chunk in audio_chunks:
             combined += chunk
+        combined.set_frame_rate(8000)
         combined.export('555.wav', format='wav')
         '''
         return duration, audio_chunks

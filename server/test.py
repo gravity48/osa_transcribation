@@ -20,11 +20,15 @@ if __name__ == '__main__':
         {
             'path': 'model-ru',
             'short_name': 'RU',
-
+            'ip': 'localhost',
+            'port': 2700
         },
+
         {
             'path': 'model-ua',
             'short_name': 'UA',
+            'ip': 'localhost',
+            'port': 2701
         }
     ]
     option_task = {
@@ -48,7 +52,7 @@ if __name__ == '__main__':
     is_run = Value('i', 1)
     records_processed = Value('i', 0)
     for record_id in records:
-        queue.put(22)
-        keyword_identification_process(queue, is_run, db, models, {alias: True}, 1, records_processed, 2, keywords, 0.9)
-        # transcribing_process(queue, is_run, db, models, {alias: True}, 1, records_processed, 2)
+        queue.put(11)
+        #keyword_identification_process(queue, is_run, db, models, {alias: True}, 1, records_processed, 2, keywords, 0.9)
+        transcribing_process(queue, is_run, db, models, {alias: True}, 1, records_processed, 2)
         # pause_identification_process(queue, is_run, db, {alias: True}, 1, records_processed, 2)

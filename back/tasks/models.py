@@ -11,6 +11,8 @@ class ModelsList(models.Model):
     name = models.TextField(max_length=100)
     path = models.TextField(max_length=100)
     short_name = models.TextField(max_length=10)
+    ip = models.TextField(max_length=100)
+    port = models.IntegerField()
 
 
 class StatusTasks(models.Model):

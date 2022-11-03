@@ -13,6 +13,7 @@ from decoder.decoder import postwork_decoder
 from datetime import datetime
 from loguru import logger
 from models import TranscribingModel
+from vosk_server import VoskServer
 from multiprocessing import Pool, Process, Queue, Semaphore, Value
 from recognize_func import get_durations, get_duration, format_text, search_keywords_in_list
 
@@ -69,13 +70,12 @@ def transcribing_process(queue, is_run, db, models, alias, item, record_processe
                 if conf > conf_chunk:
                     text_chunk = text
                     conf_chunk = conf
-            text_chunks += f'{text_chunk}  '
+            if text_chunk:
+                text_chunks += f'{text_chunk}  '
         return text_chunks
 
     for model in models:
-        model_path = MODEL_PATH + model['path']
-        train_model = TranscribingModel(model_path)
-        train_model.train()
+        train_model = VoskServer(model['ip'], model['port'])
         TRAIN_MODELS.append(train_model)
 
     postwork_db = PostworkDB(db['ip'], db['port'], db['db_login'], db['db_password'], db['db_name'], db['db_system'])
@@ -91,7 +91,7 @@ def transcribing_process(queue, is_run, db, models, alias, item, record_processe
                 continue
             f_text = text_from_chunks(chunks[0])
             r_text = text_from_chunks(chunks[1])
-            text = format_text(f_text, r_text, models['short_name'])
+            text = format_text(f_text, r_text, 'Транскрибация')
             # text_new = transcribing_model.model.text_from_wav('test123.wav')
             postwork_db.add_comment_to_record(record_id, text)
             logger.bind(**alias).info(f'Thread: {item} Record {record_id} success')
@@ -128,9 +128,7 @@ def keyword_identification_process(queue, is_run, db, models, alias, item, recor
         return words_chunks
 
     for model in models:
-        model_path = MODEL_PATH + model['path']
-        train_model = TranscribingModel(model_path)
-        train_model.train()
+        train_model = VoskServer(model['ip'], model['port'])
         TRAIN_MODELS.append(train_model)
 
     postwork_db = PostworkDB(db['ip'], db['port'], db['db_login'], db['db_password'], db['db_name'], db['db_system'])
@@ -244,7 +242,7 @@ class TranscribingTask:
             self.process_pool.append(
                 Process(target=transcribing_process,
                         args=(queue, is_run, self.db_init, self.models, self.alias, item, self.records_processed,
-                              self.options['active_time'])))
+                              self.options['speech_time'])))
             self.process_pool[-1].start()
         logger.bind(**self.alias).info('Read data from database')
         self.control_process = Process(target=control_process,

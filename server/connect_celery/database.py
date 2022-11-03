@@ -175,7 +175,7 @@ class PostworkDB:
         if clean_comments:
             sp_comment_tables = session.query(SPR_SP_COMMENT_TABLE).all()
             for sp_comment_table in sp_comment_tables:
-                sp_comment_table.s_comment = ''.encode('cp1251')
+                sp_comment_table.s_comment = ''.encode('UTF8')
         session.query(SPR_SPEECH_TABLE).update({'s_notice': None})
         session.commit()
         pass

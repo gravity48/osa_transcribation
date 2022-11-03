@@ -203,3 +203,15 @@
 2022-11-01T11:53:36.108454+0300 INFO Thread: 1 Record 19 error: TypeError("'NoneType' object is not subscriptable")
 2022-11-01T12:01:45.556007+0300 INFO Thread: 1 Record 22 success
 2022-11-01T12:13:31.013572+0300 INFO Thread: 1 Record 22 success
+2022-11-01T19:48:40.327989+0300 INFO Thread: 1 Record 22 success
+2022-11-03T14:59:36.586338+0300 INFO Thread: 1 Record 11 error: TypeError('cannot unpack non-iterable coroutine object')
+2022-11-03T15:00:54.133871+0300 INFO Thread: 1 Record 11 error: TypeError('cannot unpack non-iterable coroutine object')
+2022-11-03T15:10:25.825735+0300 INFO Thread: 1 Record 11 error: TypeError('list indices must be integers or slices, not str')
+2022-11-03T15:20:37.101048+0300 INFO Thread: 1 Record 11 error: TypeError('can only concatenate list (not "int") to list')
+2022-11-03T15:24:44.465463+0300 INFO Thread: 1 Record 11 error: ZeroDivisionError('division by zero')
+2022-11-03T15:31:10.638839+0300 INFO Thread: 1 Record 11 error: TypeError('list indices must be integers or slices, not str')
+2022-11-03T17:10:43.155082+0300 INFO Thread: 1 Record 11 error: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 2700)")
+2022-11-03T17:11:03.180728+0300 INFO Thread: 1 Record 11 error: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 2700)")
+2022-11-03T17:12:49.423420+0300 INFO Thread: 1 Record 11 success
+2022-11-03T17:26:43.446158+0300 INFO Thread: 1 Record 11 success
+2022-11-03T17:34:11.855164+0300 INFO Thread: 1 Record 11 success
