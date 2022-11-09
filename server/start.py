@@ -160,25 +160,32 @@ def keyword_identification_process(queue, is_run, db, models, alias, item, recor
             continue
 
 
-def control_process(queue, is_run, db_init, period_from, period_to, *args, **kwargs):
-    limit = 100
+def control_process(queue, is_run, db_init, period_from, period_to, alias, *args, **kwargs):
     db = PostworkDB(db_init['ip'], db_init['port'], db_init['db_login'], db_init['db_password'],
                     db_init['db_name'], db_init['db_system'])
     period_from = datetime.strptime(period_from, '%Y-%m-%dT%H:%M:%S')
     period_to = datetime.strptime(period_to, '%Y-%m-%dT%H:%M:%S')
-    records_list, record_count = db.read_records_list(period_to, period_from, db_init['options'], limit)
+    limit = 100
     while is_run:
-        while not records_list:
+        try:
             records_list, record_count = db.read_records_list(period_to, period_from, db_init['options'], limit)
+            logger.bind(**alias).info(f'Read {record_count} records')
+            while not records_list:
+                records_list, record_count = db.read_records_list(period_to, period_from, db_init['options'], limit)
+                time.sleep(5)
+            record = records_list.pop(-1)
+            db.mark_record_in_queue(record[0])
+            queue.put(record[0])
+            logger.bind(**alias).info(f'Add {record[0]} to queue')
+            while 1:
+                if queue.qsize() < limit:
+                    break
+                time.sleep(5)
+        except Exception as e:
+            error = repr(e)
+            logger.bind(**alias).info(f'Read from database error {error}')
             time.sleep(5)
-        record = records_list.pop(-1)
-        db.mark_record_in_queue(record[0])
-        queue.put(record[0])
-        while 1:
-            if queue.qsize() < limit:
-                break
-            time.sleep(5)
-
+            continue
 
 class TranscribingTask:
     FRAMERATE = 16000
@@ -241,7 +248,7 @@ class TranscribingTask:
             self.process_pool[-1].start()
         logger.bind(**self.alias).info('Read data from database')
         self.control_process = Process(target=control_process,
-                                       args=(queue, is_run, self.db_init, self.period_from, self.period_to))
+                                       args=(queue, is_run, self.db_init, self.period_from, self.period_to, self.alias))
         self.control_process.start()
 
     def pause_identification(self):
@@ -274,7 +281,7 @@ class TranscribingTask:
             self.process_pool[-1].start()
         logger.bind(**self.alias).info('Read data from database')
         self.control_process = Process(target=control_process,
-                                       args=(queue, is_run, self.db_init, self.period_from, self.period_to))
+                                       args=(queue, is_run, self.db_init, self.period_from, self.period_to, self.alias))
         self.control_process.start()
 
 
