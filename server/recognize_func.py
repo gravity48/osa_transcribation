@@ -28,7 +28,7 @@ def silens_split(stream):
     try:
         combined = AudioSegment.empty()
         sound = AudioSegment(stream,  channels=1, frame_rate=8000, sample_width=2)
-        audio_chunks = split_on_silence(sound, min_silence_len=2000, silence_thresh=-45, keep_silence=True)
+        audio_chunks = split_on_silence(sound, min_silence_len=2000, silence_thresh=-45, keep_silence=2000)
         normalize_chunks = []
         for chunk in audio_chunks:
             chunk = effects.normalize(chunk)

@@ -227,3 +227,4 @@
 2022-11-08T16:02:25.431450+0300 INFO Thread: 1 Record 22 error: ConnectionClosedError(Close(code=1011, reason=''), Close(code=1011, reason=''), True)
 2022-11-08T20:52:27.546446+0300 INFO Thread: 1 Record 22 error: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 2700)")
 2022-11-08T21:11:51.993146+0300 INFO Thread: 1 Record 22 success
+2022-11-09T10:46:47.759862+0300 INFO Thread: 1 Record 303 success

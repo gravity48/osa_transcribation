@@ -166,13 +166,14 @@ def control_process(queue, is_run, db_init, period_from, period_to, alias, *args
     period_from = datetime.strptime(period_from, '%Y-%m-%dT%H:%M:%S')
     period_to = datetime.strptime(period_to, '%Y-%m-%dT%H:%M:%S')
     limit = 100
+    records_list = []
     while is_run:
         try:
-            records_list, record_count = db.read_records_list(period_to, period_from, db_init['options'], limit)
-            logger.bind(**alias).info(f'Read {record_count} records')
-            while not records_list:
-                records_list, record_count = db.read_records_list(period_to, period_from, db_init['options'], limit)
+            records, record_count = db.read_records_list(period_to, period_from, db_init['options'], 1)
+            while not records:
+                records, record_count = db.read_records_list(period_to, period_from, db_init['options'], 1)
                 time.sleep(5)
+            records_list += records
             record = records_list.pop(-1)
             db.mark_record_in_queue(record[0])
             queue.put(record[0])

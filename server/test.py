@@ -50,7 +50,7 @@ if __name__ == '__main__':
     is_run = Value('i', 1)
     records_processed = Value('i', 0)
     for record_id in records:
-        queue.put(37)
+        queue.put(303)
         keyword_identification_process(queue, is_run, db, models, {alias: True}, 1, records_processed, 2, keywords, 0.01)
         #transcribing_process(queue, is_run, db, models, {alias: True}, 1, records_processed, 2)
         # pause_identification_process(queue, is_run, db, {alias: True}, 1, records_processed, 2)
