@@ -215,3 +215,15 @@
 2022-11-03T17:12:49.423420+0300 INFO Thread: 1 Record 11 success
 2022-11-03T17:26:43.446158+0300 INFO Thread: 1 Record 11 success
 2022-11-03T17:34:11.855164+0300 INFO Thread: 1 Record 11 success
+2022-11-03T23:42:45.454656+0300 INFO Thread: 1 Record 396 error: IndexError('list index out of range')
+2022-11-04T00:12:08.454076+0300 INFO Thread: 1 Record 395 error: TypeError("_keyword_recognize() missing 1 required positional argument: 'keywords'")
+2022-11-04T23:47:59.366971+0300 INFO Thread: 1 Record 395 error: ConnectionClosedError(Close(code=1011, reason=''), Close(code=1011, reason=''), True)
+2022-11-05T00:06:25.000934+0300 INFO Thread: 1 Record 395 error: KeyError('partial')
+2022-11-05T00:08:22.987650+0300 INFO Thread: 1 Record 393 success
+2022-11-06T03:09:36.763627+0300 INFO Thread: 1 Record 121 error: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 2700)")
+2022-11-06T19:37:35.804458+0300 INFO Thread: 1 Record 19 error: TypeError("'NoneType' object is not subscriptable")
+2022-11-06T19:38:38.281394+0300 INFO Thread: 1 Record 19 error: TypeError("'NoneType' object is not subscriptable")
+2022-11-08T15:53:25.813561+0300 INFO Thread: 1 Record 22 success
+2022-11-08T16:02:25.431450+0300 INFO Thread: 1 Record 22 error: ConnectionClosedError(Close(code=1011, reason=''), Close(code=1011, reason=''), True)
+2022-11-08T20:52:27.546446+0300 INFO Thread: 1 Record 22 error: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 2700)")
+2022-11-08T21:11:51.993146+0300 INFO Thread: 1 Record 22 success

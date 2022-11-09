@@ -35,16 +35,21 @@ class VoskServer:
     def __init__(self, ip, port):
         self.connection_string = f'ws://{ip}:{port}'
 
-    async def _keyword_recognize(self, speech_data, percent):
+    async def _keyword_recognize(self, wav_signal: wave.Wave_read, percent, keywords):
         words = []
-        wav_stream = io.BytesIO(speech_data)
+        wav_signal.rewind()
         async with websockets.connect(self.connection_string) as websocket:
-            wav_signal = wave.open(wav_stream, 'rb')
-            await websocket.send('{ "config" : { "sample_rate" : 16000, "words" : 1} }')
-            buffer_size = 3200  # int(wf.getframerate() * 0.2) 0.2 seconds of audio
+            conf = {
+                'config': {
+                    'sample_rate': wav_signal.getframerate(),
+                    'words': 1
+                }
+            }
+            await websocket.send(json.dumps(conf, ensure_ascii=False))
+            buffer_size = int(wav_signal.getframerate() * 0.2)
             while True:
                 data = wav_signal.readframes(buffer_size)
-                if len(data) == 0:
+                if not len(data):
                     break
                 await websocket.send(data)
                 response = await websocket.recv()
@@ -61,8 +66,14 @@ class VoskServer:
         wav_stream = io.BytesIO(speech_data)
         async with websockets.connect(self.connection_string) as websocket:
             wav_signal = wave.open(wav_stream, 'rb')
-            await websocket.send('{ "config" : { "sample_rate" : 16000, "words" : 1 } }')
-            buffer_size = 3200
+            conf = {
+                'config': {
+                    'sample_rate': wav_signal.getframerate(),
+                    'words': 1,
+                }
+            }
+            await websocket.send(json.dumps(conf, ensure_ascii=False))
+            buffer_size = 4000
             while True:
                 data = wav_signal.readframes(buffer_size)
                 if not data:
@@ -95,9 +106,9 @@ class VoskServer:
         else:
             return ''
 
-    def recognize_keyword(self, data, percent):
-        if data:
-            words = asyncio.run(self._keyword_recognize(data, percent))
+    def recognize_keyword(self, wave_chunk, percent, keywords):
+        if wave_chunk:
+            words = asyncio.run(self._keyword_recognize(wave_chunk, percent, keywords))
             return words
         else:
             return []

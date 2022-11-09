@@ -155,11 +155,14 @@ class PostworkDB:
 
     @open_session
     def mark_record_find_keyword(self, s_inckey, text, session: Session = None):
-        if text:
-            text = f'keyword: {text}'
+        if not text:
+            return
+        text = f'keyword: {text}'
+        spr_speech_row: SPR_SPEECH_TABLE = session.query(SPR_SPEECH_TABLE).get(s_inckey)
+        if spr_speech_row.s_notice:
+            spr_speech_row.s_notice = f'{spr_speech_row.s_notice} {text}'
         else:
-            text = 'not_found'
-        session.query(SPR_SPEECH_TABLE).filter(SPR_SPEECH_TABLE.s_inckey == s_inckey).update({'s_notice': text})
+            spr_speech_row.s_notice = f'{text}'
         session.commit()
         pass
 
@@ -252,13 +255,14 @@ if __name__ == '__main__':
     port = '5432'
     user = 'admin'
     password = '000092'
-    db_name = 'db_sprut'
+    db_name = 'test_sprut'
     db_postwork = PostworkDB(serv, port, user, password, db_name, {'name': 'Postgres'})
     db_postwork.try_connection()
     period_from = datetime.datetime.strptime('01-09-2022', '%d-%m-%Y')
     period_to = datetime.datetime.strptime('30-10-2022', '%d-%m-%Y')
-    db_postwork.unmark_all_records(1)
+    #db_postwork.unmark_all_records(1)
     data, record_count = db_postwork.read_records_list(period_to, period_from, {'post': 'POROZ'}, 100, 0)
+    db_postwork.mark_record_find_keyword(22, 'hello')
     print(data)
     print(data[0][0])
     print('ok')

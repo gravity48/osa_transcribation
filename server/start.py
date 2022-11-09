@@ -119,12 +119,11 @@ def keyword_identification_process(queue, is_run, db, models, alias, item, recor
         for chunk in chunks:
             stream = io.BytesIO()
             chunk.export(stream, format='wav')
-            chunk_wav = stream.getvalue()
-            chunk_words = []
+            chunk_wav = wave.open(stream, 'rb')
             for train_model in TRAIN_MODELS:
-                words = train_model.recognize_keyword(chunk_wav, percent)
-                chunk_words += words
-            words_chunks += chunk_words
+                words = train_model.recognize_keyword(chunk_wav, percent, keywords)
+                words_chunks += words
+            chunk_wav.close()
         return words_chunks
 
     for model in models:
@@ -147,6 +146,12 @@ def keyword_identification_process(queue, is_run, db, models, alias, item, recor
             words = f_words + r_words
             find_keywords = search_keywords_in_list(keywords, words)
             postwork_db.mark_record_find_keyword(record_id, find_keywords)
+            '''
+            comment = ''
+            for word in words:
+                comment += f'{word} '
+            postwork_db.add_comment_to_record(record_id, comment)
+            '''
             logger.bind(**alias).info(f'Thread: {item} Record {record_id} success')
             record_processed.value = record_processed.value + 1
         except Exception as e:
@@ -223,16 +228,6 @@ class TranscribingTask:
         }
         return context
 
-    def _speaker_identification_task(self, record_id, model: ModelTuple, spk_vector):
-        postwork_db = PostworkDB(self.kwargs['server'], self.kwargs['port'], self.kwargs['login'],
-                                 self.kwargs['password'],
-                                 self.kwargs['db_name'], self.kwargs['db_system'], self.kwargs['charset'])
-        data = postwork_db.read_data_from_id(record_id)
-        speech_decode = postwork_decoder(data[0][0], data[0][1], data[0][2])
-        vector_r, vector_f = model.model.get_vectors_from_data(speech_decode)
-        result = model.model.cosine_dist(vector_f, spk_vector)
-        pass
-
     def transcribing(self):
         logger.bind(**self.alias).info('Run transcribing')
         logger.bind(**self.alias).info('Run processes')
@@ -281,23 +276,6 @@ class TranscribingTask:
         self.control_process = Process(target=control_process,
                                        args=(queue, is_run, self.db_init, self.period_from, self.period_to))
         self.control_process.start()
-
-    def run_speaker_identification_process(self, process_count, filepath):
-        logger.info('Run speaker identification process')
-        logger.info('Train models')
-        transcribing_model = ModelTuple(TranscribingModel(self.models[0]['path']), self.models[1]['name'])
-        transcribing_model.model.train()
-        transcribing_model.model.set_spk_models(self.spk_model)
-        logger.info('Train transcribing models success')
-        logger.info('Get spk vector')
-        spk_vector = transcribing_model.model.get_speaker_vector(filepath)
-        records_list, record_count = self.postwork_db_local.read_records_list(self.period_to, self.period_from,
-                                                                              self.TASK_LIMIT)
-        while records_list:
-            record = records_list.pop(-1)
-            logger.info(f'Handle record id: {record[0]}')
-            self._speaker_identification_task(record[0], transcribing_model, spk_vector)
-        pass
 
 
 class TranscribingServer(socketserver.BaseRequestHandler):
