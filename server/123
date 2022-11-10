@@ -228,3 +228,14 @@
 2022-11-08T20:52:27.546446+0300 INFO Thread: 1 Record 22 error: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 2700)")
 2022-11-08T21:11:51.993146+0300 INFO Thread: 1 Record 22 success
 2022-11-09T10:46:47.759862+0300 INFO Thread: 1 Record 303 success
+2022-11-09T14:53:31.165566+0300 INFO Thread: 1 Record 303 error: TypeError("unsupported operand type(s) for +: 'dict' and 'list'")
+2022-11-09T14:54:01.486002+0300 INFO Thread: 1 Record 303 error: TypeError("unsupported operand type(s) for +: 'dict' and 'list'")
+2022-11-09T14:54:17.600548+0300 INFO Thread: 1 Record 303 error: TypeError("unsupported operand type(s) for +: 'dict' and 'list'")
+2022-11-09T14:58:30.240196+0300 INFO Thread: 1 Record 303 success
+2022-11-09T15:22:27.030066+0300 INFO Thread: 1 Record 27 success
+2022-11-09T15:24:45.717807+0300 INFO Thread: 1 Record 28 success
+2022-11-09T15:48:03.334761+0300 INFO Thread: 1 Record 64 success
+2022-11-10T10:51:19.442116+0300 INFO Thread: 1 Record 17 error: TypeError("unsupported operand type(s) for +=: 'set' and 'set'")
+2022-11-10T10:52:23.182131+0300 INFO Thread: 1 Record 17 error: TypeError("unsupported operand type(s) for +=: 'set' and 'set'")
+2022-11-10T11:35:38.885831+0300 INFO Thread: 1 Record 19 error: TypeError("'NoneType' object is not subscriptable")
+2022-11-10T12:13:44.917786+0300 INFO Thread: 1 Record 22 success

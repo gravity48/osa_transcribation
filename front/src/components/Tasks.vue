@@ -84,10 +84,10 @@
           <label for="period-to"><span class="input-header">Фильтр по дате</span><br> <span class="input-detail">Период, за который необходимо произвести пердварительную обработку записей</span>
           </label>
           <div class="date-time-string"><span>С</span>
-            <Datepicker id="period-to" format="dd/MM/yyyy" v-model="task_settings.period_from"
+            <Datepicker id="period-to" format="dd/MM/yyyy HH:mm" v-model="task_settings.period_from"
                         :maxDate="task_settings.period_to" locale="ru"/>
             <span>по</span>
-            <Datepicker id="period-from" format="dd/MM/yyyy" v-model="task_settings.period_to"
+            <Datepicker id="period-from" format="dd/MM/yyyy HH:mm" v-model="task_settings.period_to"
                         :minDate="task_settings.period_from" locale="ru"/>
           </div>
         </div>
@@ -442,7 +442,6 @@ form input, form select, #date-input, form button {
   position: absolute;
   top: 0;
   left: 0;
-  width: 10%;
   height: 62px;
   background-color: rgba(0, 128, 0, 0.3);
   transition: width 0.5s;

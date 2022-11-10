@@ -140,7 +140,7 @@ export default {
   color: black; /* Black text color */
   padding: 12px; /* Add some padding */
   text-decoration: none; /* Remove underline from links */
-  width: 115px;
+  width: 130px;
   box-sizing: border-box;
   line-height: 38px;
 }

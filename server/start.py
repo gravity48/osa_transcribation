@@ -15,7 +15,7 @@ from loguru import logger
 from models import TranscribingModel
 from vosk_server import VoskServer
 from multiprocessing import Pool, Process, Queue, Semaphore, Value
-from recognize_func import get_durations, get_duration, format_text, search_keywords_in_list
+from recognize_func import get_durations, get_duration, format_text, search_keywords_in_set
 
 ModelTuple = namedtuple('ModelTuple', ['model', 'name'])
 
@@ -39,11 +39,11 @@ def pause_identification_process(queue, is_run, db, alias, item, record_processe
         try:
             postwork_db.mark_record(record_id)
             data = postwork_db.read_data_from_id(record_id)
-            f_speech, r_speech = postwork_decoder(data[0][0], data[0][1], data[0][2])
-            f_wav_duration = get_duration(f_speech)
-            r_wav_duration = get_duration(r_speech)
-            if (f_wav_duration < time_min) and (r_wav_duration < time_min):
+            speech_decode = postwork_decoder(data[0][0], data[0][1], data[0][2])
+            status, chunks = get_durations(speech_decode[0], speech_decode[1], time_min)
+            if not status:
                 postwork_db.mark_record_empty(record_id)
+                continue
             logger.bind(**alias).info(f'Thread: {item} Record {record_id} success')
             record_processed.value = record_processed.value + 1
         except Exception as e:
@@ -62,7 +62,7 @@ def transcribing_process(queue, is_run, db, models, alias, item, record_processe
         for chunk in chunks:
             stream = io.BytesIO()
             chunk.export(stream, format='wav')
-            chunk_wav = stream.getvalue()
+            chunk_wav = wave.open(stream)
             conf_chunk = 0
             text_chunk = ''
             for train_model in TRAIN_MODELS:
@@ -72,6 +72,7 @@ def transcribing_process(queue, is_run, db, models, alias, item, record_processe
                     conf_chunk = conf
             if text_chunk:
                 text_chunks += f'{text_chunk}  '
+            chunk_wav.close()
         return text_chunks
 
     for model in models:
@@ -113,7 +114,7 @@ def keyword_identification_process(queue, is_run, db, models, alias, item, recor
         return text
 
     def keyword_from_chunks(chunks):
-        words_chunks = []
+        words_chunks = set()
         if not chunks:
             return []
         for chunk in chunks:
@@ -122,7 +123,7 @@ def keyword_identification_process(queue, is_run, db, models, alias, item, recor
             chunk_wav = wave.open(stream, 'rb')
             for train_model in TRAIN_MODELS:
                 words = train_model.recognize_keyword(chunk_wav, percent, keywords)
-                words_chunks += words
+                words_chunks.update(words)
             chunk_wav.close()
         return words_chunks
 
@@ -143,8 +144,8 @@ def keyword_identification_process(queue, is_run, db, models, alias, item, recor
                 continue
             f_words = keyword_from_chunks(chunks[0])
             r_words = keyword_from_chunks(chunks[1])
-            words = f_words + r_words
-            find_keywords = search_keywords_in_list(keywords, words)
+            words = f_words.union(r_words)
+            find_keywords = search_keywords_in_set(keywords, words)
             postwork_db.mark_record_find_keyword(record_id, find_keywords)
             '''
             comment = ''
@@ -163,12 +164,16 @@ def keyword_identification_process(queue, is_run, db, models, alias, item, recor
 def control_process(queue, is_run, db_init, period_from, period_to, alias, *args, **kwargs):
     db = PostworkDB(db_init['ip'], db_init['port'], db_init['db_login'], db_init['db_password'],
                     db_init['db_name'], db_init['db_system'])
-    period_from = datetime.strptime(period_from, '%Y-%m-%dT%H:%M:%S')
-    period_to = datetime.strptime(period_to, '%Y-%m-%dT%H:%M:%S')
+    period_from = datetime.strptime(period_from, '%Y-%m-%dT%H:%M:%S%z')
+    period_to = datetime.strptime(period_to, '%Y-%m-%dT%H:%M:%S%z')
     limit = 100
     records_list = []
     while is_run:
         try:
+            while 1:
+                if queue.qsize() < limit:
+                    break
+                time.sleep(5)
             records, record_count = db.read_records_list(period_to, period_from, db_init['options'], 1)
             while not records:
                 records, record_count = db.read_records_list(period_to, period_from, db_init['options'], 1)
@@ -178,21 +183,14 @@ def control_process(queue, is_run, db_init, period_from, period_to, alias, *args
             db.mark_record_in_queue(record[0])
             queue.put(record[0])
             logger.bind(**alias).info(f'Add {record[0]} to queue')
-            while 1:
-                if queue.qsize() < limit:
-                    break
-                time.sleep(5)
         except Exception as e:
             error = repr(e)
             logger.bind(**alias).info(f'Read from database error {error}')
             time.sleep(5)
             continue
 
-class TranscribingTask:
-    FRAMERATE = 16000
-    SLEEP_TIME = 10
-    TASK_LIMIT = 100
 
+class TranscribingTask:
     @staticmethod
     def options_parse(options):
         keywords = options.get('keywords', [])
@@ -340,15 +338,6 @@ class TranscribingServer(socketserver.BaseRequestHandler):
             trascribing_task.pause_identification()
         if data['task_type']['id'] == KeywordsIdentificationsTaskType:
             trascribing_task.search_keywords()
-        self.TASK_RUNNING[data['id']] = trascribing_task
-        context = {
-            'status': True
-        }
-        self.send(context)
-
-    def pause_del_task(self, data):
-        trascribing_task = TranscribingTask(**data)
-        trascribing_task.transcribing()
         self.TASK_RUNNING[data['id']] = trascribing_task
         context = {
             'status': True

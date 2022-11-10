@@ -9,14 +9,14 @@ import wave
 class VoskServer:
 
     @staticmethod
-    def _words_extract(response, percent) -> list:
-        words = []
+    def _words_extract(response, percent) -> set:
+        words = set()
         try:
             response = json.loads(response)
             result = response['result']
             for word in result:
                 if word['conf'] > percent:
-                    words.append(word['word'])
+                    words.add(word['word'])
             return words
         except Exception as e:
             return words
@@ -36,7 +36,7 @@ class VoskServer:
         self.connection_string = f'ws://{ip}:{port}'
 
     async def _keyword_recognize(self, wav_signal: wave.Wave_read, percent, keywords):
-        words = []
+        words = set()
         wav_signal.rewind()
         async with websockets.connect(self.connection_string) as websocket:
             conf = {
@@ -53,27 +53,26 @@ class VoskServer:
                     break
                 await websocket.send(data)
                 response = await websocket.recv()
-                words += self._words_extract(response, percent)
+                words.update(self._words_extract(response, percent))
             await websocket.send('{"eof" : 1}')
             response = await websocket.recv()
-            words += self._words_extract(response, percent)
+            words.update(self._words_extract(response, percent))
             return words
 
-    async def _word_recognize(self, speech_data):
+    async def _word_recognize(self, wav_signal: wave.Wave_read):
         conf = []
         text = ''
         con_int = 0
-        wav_stream = io.BytesIO(speech_data)
+        wav_signal.rewind()
         async with websockets.connect(self.connection_string) as websocket:
-            wav_signal = wave.open(wav_stream, 'rb')
-            conf = {
+            vosk_conf = {
                 'config': {
                     'sample_rate': wav_signal.getframerate(),
                     'words': 1,
                 }
             }
-            await websocket.send(json.dumps(conf, ensure_ascii=False))
-            buffer_size = 4000
+            await websocket.send(json.dumps(vosk_conf, ensure_ascii=False))
+            buffer_size = int(wav_signal.getframerate() * 0.2)
             while True:
                 data = wav_signal.readframes(buffer_size)
                 if not data:
@@ -91,17 +90,15 @@ class VoskServer:
                 conf = conf + conf_partial
                 text += f'{text_partial} '
             if conf:
-                for con in conf:
-                    con_int += con
-                con_int = con_int / len(conf)
+                con_int = sum(conf)/len(conf)
                 return con_int, text
             else:
                 return con_int, text
 
 
-    def recognize_chunk(self, data):
-        if data:
-            conf, text = asyncio.run(self._word_recognize(data))
+    def recognize_chunk(self, wave_chunk):
+        if wave_chunk:
+            conf, text = asyncio.run(self._word_recognize(wave_chunk))
             return conf, text
         else:
             return ''
@@ -111,7 +108,7 @@ class VoskServer:
             words = asyncio.run(self._keyword_recognize(wave_chunk, percent, keywords))
             return words
         else:
-            return []
+            return set()
 
 
 if __name__ == '__main__':
