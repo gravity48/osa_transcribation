@@ -221,8 +221,10 @@ class TranscribingTask:
         self.process_pool = []
         self.control_process = None
         self.records_processed = Value('i', 0)
+        self.is_run = Value('i', 1)
 
     def stop(self):
+        self.is_run = 0
         self.control_process.kill()
         for process in self.process_pool:
             process.kill()
@@ -238,32 +240,30 @@ class TranscribingTask:
         logger.bind(**self.alias).info('Run transcribing')
         logger.bind(**self.alias).info('Run processes')
         queue = Queue()
-        is_run = Value('i', 1)
         for item in range(self.thread_count):
             self.process_pool.append(
                 Process(target=transcribing_process,
-                        args=(queue, is_run, self.db_init, self.models, self.alias, item, self.records_processed,
+                        args=(queue, self.is_run, self.db_init, self.models, self.alias, item, self.records_processed,
                               self.options['speech_time'])))
             self.process_pool[-1].start()
         logger.bind(**self.alias).info('Read data from database')
         self.control_process = Process(target=control_process,
-                                       args=(queue, is_run, self.db_init, self.period_from, self.period_to, self.alias))
+                                       args=(queue, self.is_run, self.db_init, self.period_from, self.period_to, self.alias))
         self.control_process.start()
 
     def pause_identification(self):
         logger.bind(**self.alias).info('Run pause identification')
         logger.bind(**self.alias).info('Run processes')
         queue = Queue()
-        is_run = Value('i', 1)
         for item in range(self.thread_count):
             self.process_pool.append(
                 Process(target=pause_identification_process,
-                        args=(queue, is_run, self.db_init, self.alias, item, self.records_processed,
+                        args=(queue, self.is_run, self.db_init, self.alias, item, self.records_processed,
                               self.options['speech_time'])))
             self.process_pool[-1].start()
         logger.bind(**self.alias).info('Read data from database')
         self.control_process = Process(target=control_process,
-                                       args=(queue, is_run, self.db_init, self.period_from, self.period_to))
+                                       args=(queue, self.is_run, self.db_init, self.period_from, self.period_to))
         self.control_process.start()
         pass
 
@@ -271,16 +271,15 @@ class TranscribingTask:
         logger.bind(**self.alias).info('Run search keywords')
         logger.bind(**self.alias).info('Run processes')
         queue = Queue()
-        is_run = Value('i', 1)
         for item in range(self.thread_count):
             self.process_pool.append(
                 Process(target=keyword_identification_process,
-                        args=(queue, is_run, self.db_init, self.models, self.alias, item, self.records_processed,
+                        args=(queue, self.is_run, self.db_init, self.models, self.alias, item, self.records_processed,
                               self.options['speech_time'], self.keywords, self.percent)))
             self.process_pool[-1].start()
         logger.bind(**self.alias).info('Read data from database')
         self.control_process = Process(target=control_process,
-                                       args=(queue, is_run, self.db_init, self.period_from, self.period_to, self.alias))
+                                       args=(queue, self.is_run, self.db_init, self.period_from, self.period_to, self.alias))
         self.control_process.start()
 
 

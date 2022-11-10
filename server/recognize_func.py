@@ -53,7 +53,7 @@ def get_durations(stream_f, stream_r, active_time):
 
 def search_keywords_in_set(keywords: list, words: set) -> str:
     regex_string = '|'.join(keywords)
-    r = re.compile(f".*({regex_string})")
+    r = re.compile(f"({regex_string})")
     result = list(filter(r.match, words))  # Read Note below
     find_string = ' '.join(result)
     return find_string

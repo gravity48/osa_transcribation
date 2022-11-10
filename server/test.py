@@ -5,7 +5,7 @@ from start import pause_identification_process, transcribing_process, keyword_id
 from multiprocessing import Pool, Process, Queue, Semaphore, Value
 
 if __name__ == '__main__':
-    alias = '123'
+    alias = 'logs\\123.log'
     db = {
         'ip': '127.0.0.1',
         'port': '5432',
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     ]
     option_task = {
         'speech_time': 3,
-        'keywords': 'привет\nхарьков\nдоброе',
+        'keywords': 'привет\nхарьков\n^доброе$',
     }
     option_connections = {
     }
