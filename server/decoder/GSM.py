@@ -3,7 +3,7 @@ import subprocess
 import os
 import shlex
 
-PATH_TO_LIB = '/home/gravity/Work/CLionProjects/replica_decoder/cmake-build-debug/'
+PATH_TO_LIB = '/Work/CLionProjects/replica_decoder/cmake-build-debug/'
 
 def from_bytes_to_bytes(
         input_bytes: bytes,
@@ -21,6 +21,8 @@ def from_bytes_to_s16le(input_bytes: bytes):
     process.communicate(input_bytes)
     process.wait()
     out, err = process.communicate()
+    if process.poll():
+        raise subprocess.CalledProcessError(process.returncode, 'replica_decoder')
     return out
 
 
