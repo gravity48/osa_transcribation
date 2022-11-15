@@ -26,6 +26,7 @@ def open_session(func):
         kwargs['session'] = session
         result = func(*args, **kwargs)
         session.close()
+        args[0]._engine.dispose()
         return result
 
     return wrapper
@@ -244,7 +245,7 @@ class PostworkDB:
             connection_str = f'postgresql+psycopg2://{db_login}:{db_password}@{ip}:{port}/{db_name}'
         elif db_system['name'] == 'Firebird':
             connection_str = f'firebird+fdb://{db_login}:{db_password}@{ip}:{port}/{db_name}?&charset={charset}'
-        self._engine = create_engine(connection_str)
+        self._engine = create_engine(connection_str, connect_args={"application_name":"OSA transcribation"})
         self.session_master = sessionmaker(bind=self._engine)
         self.cursor = None
         self.codecs = ['GSM', ]
