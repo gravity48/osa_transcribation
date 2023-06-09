@@ -14,6 +14,8 @@ services:
     container_name: osa_tr_front
     env_file:
       - front/.env.prod
+    ports:
+      - "5173:5173"
   server:
     image: transcribing_web_server:latest
     container_name: osa_tr_server
