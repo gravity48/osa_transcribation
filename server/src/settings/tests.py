@@ -1,0 +1,16 @@
+import os
+
+# TEST DATABASE
+TEST_DB_HOST = os.environ['TEST_DB_HOST']
+TEST_DB_PORT = os.environ['TEST_DB_PORT']
+TEST_DB_NAME = os.environ['TEST_DB_NAME']
+TEST_DB_LOGIN = os.environ['TEST_DB_LOGIN']
+TEST_DB_PASSWORD = os.environ['TEST_DB_PASSWORD']
+
+# TEST VOSK RU SERVER
+TEST_RU_VOSK_HOST = os.environ['TEST_RU_VOSK_HOST']
+TEST_RU_VOSK_PORT = int(os.environ['TEST_RU_VOSK_PORT'])
+
+# TEST VOSK UA SERVER
+TEST_UA_VOSK_HOST = os.environ['TEST_UA_VOSK_HOST']
+TEST_UA_VOSK_PORT = int(os.environ['TEST_UA_VOSK_PORT'])

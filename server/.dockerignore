@@ -1,0 +1,8 @@
+models
+venv
+
+src/replica_decoder/build
+src/replica_decoder/CMakeCache.txt
+src/replica_decoder/Makefile
+
+.env

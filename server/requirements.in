@@ -1,0 +1,10 @@
+SQLAlchemy
+loguru
+psycopg2-binary
+websockets
+fdb
+bitarray
+pydub
+
+python-dotenv
+

@@ -1,0 +1,59 @@
+#include <iostream>
+#include <dlfcn.h>
+#include <cstddef>
+#include <fstream>
+#include <vector>
+
+using namespace std;
+
+long file_length(std::ifstream &file){
+    long begin = file.tellg();
+    file.seekg(0, ios::end);
+    long end = file.tellg();
+    long fsize = (end-begin);
+    file.seekg(0, ios::beg);
+    return fsize;
+}
+
+int main(int argc, char *argv[]) {
+    string params = argv[1];
+    size_t length = stoi(argv[2]);
+    auto inputFile = new char [length];
+    if (params == "stdout"){
+        fread(inputFile, 1, length, stdin);
+    }
+    auto *pInputBuffer = new  char [34];
+    auto *pOutputBuffer = new  char [320];
+    void *handle;
+    int* (*DecodeProcess_Init)();
+    void (*DecodeProcess_Free)(int *DecoderProcess_Init);
+    void (*DecodeProcess)(int* DecodeInit, char* InputBuffer, char* OutputBuffer);
+    handle = dlopen("/media/gravity/Data/Download/replica/opt/replicaSoftware/replica6/decoder-server/SpeechCodecs/gsm.so", RTLD_LAZY);
+    *(void**)(&DecodeProcess_Init) = dlsym(handle, "DecodeProcess_Init");
+    *(void**)(&DecodeProcess) = dlsym(handle, "DecodeProcess");
+    *(void**)(&DecodeProcess_Free) = dlsym(handle, "DecodeProcess_Free");
+
+    int buffer_size = 34;
+
+    std::ifstream input( "/home/gravity/Work/CLionProjects/untitled/input_data.bin",  ios::binary );
+
+    std::ofstream output("/home/gravity/Work/CLionProjects/untitled/output.pcm", ios::out| ios::binary);
+    // copies all data into buffer
+    long fsize = file_length(input);
+
+    int loops = fsize / buffer_size;
+    int *decode_init = DecodeProcess_Init();
+
+    for (int i = 0; i < loops; i++) {
+        input.read((char *)pInputBuffer, buffer_size);
+        DecodeProcess(decode_init, (char*) pInputBuffer, (char *) pOutputBuffer);
+        //fwrite((char *)pOutputBuffer, 1, 320, stdout);
+        output.write((char *)pOutputBuffer, 320);
+    }
+    DecodeProcess_Free(decode_init);
+    input.close();
+    output.close();
+
+    dlclose(handle);
+    return 0;
+}

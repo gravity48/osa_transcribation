@@ -1,5 +1,6 @@
 #Log files#
 logfiles/
+mock/*
 
 #Transcribing Models
 tr_models/
