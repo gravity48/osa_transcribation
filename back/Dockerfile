@@ -30,4 +30,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ./src /app
 
 RUN mkdir -p /app/media /app/static && \
-	chmod +x /app/media/ /app/static/ \
+	chmod +x /app/media/ /app/static/
+
+# gunicorn -b 0.0.0.0:8000 --log-level info --access-logfile - conf.wsgi:application
+
+CMD python manage.py migrate && \
+    python manage.py runserver 0.0.0.0:8000

@@ -2,34 +2,24 @@ version: "3.9"
 
 services:
   back:
+    image: transcribing_web_back:latest
     container_name: osa_tr_back
-    build: ./back
     env_file:
       - back/.env.prod
-    command: >
-      sh -c "python manage.py migrate &&
-      python manage.py runserver 0.0.0.0:8000"
-#      gunicorn -b 0.0.0.0:8000 --log-level info --access-logfile - conf.wsgi:application"
     restart: always
-    ports:
-      - "8000:8000"
     depends_on:
       - server
   front:
+    image: transcribing_web_front:latest
     container_name: osa_tr_front
-    build: ./front
-    command: npm run serve
     env_file:
       - front/.env.prod
-    ports:
-      - "5173:5173"
   server:
+    image: transcribing_web_server:latest
     container_name: osa_tr_server
-    build: ./server
+    restart: always
     env_file:
       - server/.env.prod
-    ports:
-      - "4848:4848"
     depends_on:
       - ru_model
       - ua_model
@@ -38,15 +28,11 @@ services:
     container_name: osa_tr_ru_model
     volumes:
       - ./models/russian:/opt/vosk-model-en/model
-    ports:
-      - "2700:2700"
   ua_model:
     image: alphacep/kaldi-en:latest
     container_name: osa_tr_ua_model
     volumes:
       - ./models/ukrainan:/opt/vosk-model-en/model
-    ports:
-      - "2701:2700"
 
 
 
