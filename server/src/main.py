@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import json
 import socketserver
 import threading
@@ -122,21 +123,13 @@ class TranscribingServer(socketserver.BaseRequestHandler):
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
+=======
+from settings import SERVER_HOST, SERVER_PORT
+from websockets.sync.server import serve
+>>>>>>> e64f36e (server refactoring)
 
+from server.server import TranscribingServer
 
 if __name__ == '__main__':
-    logger.info('Run server')
-
-    server = ThreadedTCPServer((SERVER_HOST, SERVER_PORT), TranscribingServer)
-
-    with server:
-        ip, port = server.server_address
-        # Start a thread with the server -- that thread will then start one
-        # more thread for each request
-        server_thread = threading.Thread(target=server.serve_forever)
-        # Exit the server thread when the main thread terminates
-        server_thread.daemon = True
-        server_thread.start()
-        logger.info(f'Server loop running in thread: {server_thread.name}')
-        server_thread.join()
-pass
+    with serve(TranscribingServer().handler, SERVER_HOST, SERVER_PORT) as server:
+        server.serve_forever()

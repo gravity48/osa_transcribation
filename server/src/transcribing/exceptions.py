@@ -1,0 +1,6 @@
+class StopProcessError(Exception):
+    ...
+
+
+class ContinueProcessError(Exception):
+    ...

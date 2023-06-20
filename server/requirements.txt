@@ -4,25 +4,57 @@
 #
 #    pip-compile
 #
+add-trailing-comma==2.5.1
+    # via -r requirements.in
 bitarray==2.7.4
     # via -r requirements.in
-fdb==2.0.2
+black==23.3.0
     # via -r requirements.in
-future==0.18.3
-    # via fdb
+click==8.1.3
+    # via black
+faker==18.10.1
+    # via -r requirements.in
+flake8==6.0.0
+    # via -r requirements.in
 greenlet==2.0.2
     # via sqlalchemy
+isort==5.12.0
+    # via -r requirements.in
 loguru==0.7.0
     # via -r requirements.in
+mccabe==0.7.0
+    # via flake8
+mypy-extensions==1.0.0
+    # via black
+packaging==23.1
+    # via black
+pathspec==0.11.1
+    # via black
+platformdirs==3.6.0
+    # via black
 psycopg2-binary==2.9.6
     # via -r requirements.in
+pycodestyle==2.10.0
+    # via flake8
 pydub==0.25.1
     # via -r requirements.in
+pyflakes==3.0.1
+    # via flake8
+python-dateutil==2.8.2
+    # via faker
 python-dotenv==1.0.0
     # via -r requirements.in
+six==1.16.0
+    # via python-dateutil
 sqlalchemy==2.0.15
     # via -r requirements.in
+tokenize-rt==5.1.0
+    # via add-trailing-comma
+tomli==2.0.1
+    # via black
 typing-extensions==4.6.3
-    # via sqlalchemy
+    # via
+    #   black
+    #   sqlalchemy
 websockets==11.0.3
     # via -r requirements.in
