@@ -1,0 +1,30 @@
+[
+  {
+    "model": "tasks.statustasks",
+    "pk": 1,
+    "fields": {
+      "status": "in progress"
+    }
+  },
+  {
+    "model": "tasks.statustasks",
+    "pk": 2,
+    "fields": {
+      "status": "stopped"
+    }
+  },
+  {
+    "model": "tasks.statustasks",
+    "pk": 3,
+    "fields": {
+      "status": "Success"
+    }
+  },
+  {
+    "model": "tasks.statustasks",
+    "pk": 4,
+    "fields": {
+      "status": "Errors"
+    }
+  }
+]

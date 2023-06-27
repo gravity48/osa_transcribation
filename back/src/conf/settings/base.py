@@ -19,7 +19,9 @@ DJANGO_ENV = os.getenv("DJANGO_ENV", "DEVELOPMENT")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = DJANGO_ENV != 'PRODUCTION'
 
-ALLOWED_HOSTS = ['*', ]
+ALLOWED_HOSTS = [
+    '*',
+]
 
 # Application definition
 
@@ -30,15 +32,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    'connections.apps.ConnectionsConfig',
-    'tasks.apps.TasksConfig',
-    'index.apps.IndexConfig',
-    'custom_auth.apps.CustomAuthConfig',
-
-    'api.apps.ApiConfig',
+    'drf_spectacular',
     'django_filters',
     'rest_framework',
+    'connections',
+    'tasks',
 ]
 
 MIDDLEWARE = [
@@ -102,6 +100,8 @@ DATETIME_FORMAT = 'Y-m-d H:i'
 LOGDIR = f'{BASE_DIR}/logfiles/'
 
 MODELSDIR = f'{BASE_DIR}/models/'
+
+FIXTURE_DIRS = (BASE_DIR / 'fixtures',)
 
 DEF_ERROR_MESSAGES = {
     'invalid': _('Проверьте корректность поля'),

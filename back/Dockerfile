@@ -15,9 +15,8 @@ RUN apt-get update && \
   build-essential \
   gettext \
   libpq-dev \
-  wget
-  # Cleaning cache:
-RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+  wget &&  \
+    apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -29,8 +28,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./src /app
 
-RUN mkdir -p /app/media /app/static && \
-	chmod +x /app/media/ /app/static/
+RUN mkdir -p /app/media /app/static
 
 # gunicorn -b 0.0.0.0:8000 --log-level info --access-logfile - conf.wsgi:application
 

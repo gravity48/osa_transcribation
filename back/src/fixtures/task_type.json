@@ -1,0 +1,23 @@
+[
+  {
+    "model": "tasks.tasktype",
+    "pk": 1,
+    "fields": {
+      "name": "Распознавание речи"
+    }
+  },
+  {
+    "model": "tasks.tasktype",
+    "pk": 2,
+    "fields": {
+      "name": "Удаление пауз"
+    }
+  },
+  {
+    "model": "tasks.tasktype",
+    "pk": 3,
+    "fields": {
+      "name": "Поиск ключевых слов"
+    }
+  }
+]

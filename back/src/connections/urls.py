@@ -1,10 +1,16 @@
-from django.urls import path, re_path
-from django.views.generic import TemplateView
+from django.urls import path
+from rest_framework.routers import DefaultRouter
 
-from . import views
+from .views.v1.connections_status import ConnectionStatusView
+from .views.v1.connections_view import ConnectionsViewSet
+from .views.v1.database_system_view import DatabaseSystemView
 
-app_name = 'connections'
+router = DefaultRouter()
+router.register('connections', ConnectionsViewSet, basename='connections')
 
 urlpatterns = [
-    path('', views.ConnectionsView.as_view(), name='connections_post'),
+    path('status/', ConnectionStatusView.as_view(), name='connection_status'),
+    path('systems/', DatabaseSystemView.as_view(), name='database_systems'),
 ]
+
+urlpatterns += router.urls

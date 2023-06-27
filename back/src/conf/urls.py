@@ -13,14 +13,21 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from conf.spectacular import urlpatterns as spectacular_urls
 from django.contrib import admin
-from django.urls import path, include, re_path
+from django.urls import include, path
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+api_urls = [
+    path('connections/', include('connections.urls')),
+    path('tasks/', include('tasks.urls')),
+    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+]
 
 urlpatterns = [
-    path('api/', include('api.urls')),
-    #
-    # path('', include('index.urls')),
-    # path('home/task/', include('index.urls')),
-    # path('home/connections/', include('index.urls')),
-    # path('home/login/', include('index.urls')),
+    path('admin/', admin.site.urls),
+    path('api/v1/', include(api_urls)),
 ]
+
+urlpatterns += spectacular_urls

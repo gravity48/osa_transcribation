@@ -1,0 +1,16 @@
+[
+  {
+    "model": "connections.connectionsstatus",
+    "pk": 1,
+    "fields": {
+      "status_name": "Active"
+    }
+  },
+  {
+    "model": "connections.connectionsstatus",
+    "pk": 2,
+    "fields": {
+      "status_name": "Offline"
+    }
+  }
+]

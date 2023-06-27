@@ -4,7 +4,15 @@ markdown
 django-filter
 django-cors-headers
 djangorestframework-simplejwt
+drf-spectacular
 
 psycopg2-binary
+Faker
+factory_boy
 python-dotenv
+black
+isort
+flake8
+add-trailing-comma
+
 gunicorn
