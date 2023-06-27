@@ -30,7 +30,6 @@ COPY ./src /app
 
 RUN mkdir -p /app/media /app/static
 
-# gunicorn -b 0.0.0.0:8000 --log-level info --access-logfile - conf.wsgi:application
 
-CMD python manage.py migrate && \
-    python manage.py runserver 0.0.0.0:8000
+CMD python manage.py collectstatic --no-input \
+    && gunicorn -b 0.0.0.0:8000 --log-level info --access-logfile - conf.wsgi:application

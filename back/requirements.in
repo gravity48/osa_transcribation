@@ -5,6 +5,7 @@ django-filter
 django-cors-headers
 djangorestframework-simplejwt
 drf-spectacular
+whitenoise
 
 psycopg2-binary
 Faker
