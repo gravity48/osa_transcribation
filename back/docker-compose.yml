@@ -6,6 +6,5 @@ services:
     build: .
     env_file:
       - .env.prod
-    restart: always
     ports:
       - "8000:8000"
