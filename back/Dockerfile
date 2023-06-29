@@ -32,4 +32,5 @@ RUN mkdir -p /app/media /app/static
 
 
 CMD python manage.py collectstatic --no-input \
+    && python manage.py loaddata fixtures/initial_data.json \
     && gunicorn -b 0.0.0.0:8000 --log-level info --access-logfile - conf.wsgi:application

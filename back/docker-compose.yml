@@ -5,6 +5,6 @@ services:
     container_name: osa_tr_back_local
     build: .
     env_file:
-      - .env.prod
+      - .env
     ports:
       - "8000:8000"
