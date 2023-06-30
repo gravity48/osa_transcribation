@@ -9,6 +9,9 @@ DB_STATUS_ONLINE = 1
 class DatabaseSystems(models.Model):
     name = models.CharField(_('database system name'), unique=True, max_length=100)
 
+    def __str__(self):
+        return self.name
+
     class Meta:
         db_table = 'database_system'
         verbose_name = _('database systems')
@@ -17,6 +20,9 @@ class DatabaseSystems(models.Model):
 
 class ConnectionsStatus(models.Model):
     status_name = models.CharField(unique=True, max_length=100)
+
+    def __str__(self):
+        return self.status_name
 
     class Meta:
         db_table = 'connection_status'
@@ -43,14 +49,18 @@ class Connections(models.Model):
         verbose_name=_('database status'),
         default=DB_STATUS_OFFLINE,
         on_delete=models.CASCADE,
+        blank=True,
     )
-    ip = models.CharField(_('ip address database server'), max_length=100, default='')
+    ip = models.CharField(_('ip address database server'), max_length=100, default='', blank=True)
     port = models.IntegerField(_('database server port'), null=True, blank=True)
-    db_login = models.CharField(_('database login'), max_length=100, default='')
-    db_password = models.CharField(_('database password'), max_length=100, default='')
-    db_name = models.CharField(_('database name'), max_length=500, default='')
-    created_at = models.DateTimeField(auto_now_add=True)
-    options = models.JSONField(default=dict)
+    db_login = models.CharField(_('database login'), max_length=100, default='', blank=True)
+    db_password = models.CharField(_('database password'), max_length=100, default='', blank=True)
+    db_name = models.CharField(_('database name'), max_length=500, default='', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True)
+    options = models.JSONField(default=dict, blank=True)
+
+    def __str__(self):
+        return f'{self.id} {self.alias}'
 
     class Meta:
         db_table = 'connections'

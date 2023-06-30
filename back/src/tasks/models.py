@@ -74,13 +74,14 @@ class Tasks(models.Model):
         verbose_name=_('task status'),
         default=STOP_STATUS_TASK,
         on_delete=models.RESTRICT,
+        blank=True,
     )
     alias = models.CharField(_('task alias'), max_length=100, unique=True, default=generate_hash)
     period_from = models.DateTimeField(_('task period from'), blank=True, null=True)
     period_to = models.DateTimeField(_('task period to'), blank=True, null=True)
     thread_count = models.IntegerField(_('process count'), default=1)
-    options = models.JSONField(_('task options'), default=dict)
-    created_at = models.DateTimeField(_('task created at'), auto_now_add=True)
+    options = models.JSONField(_('task options'), default=dict, blank=True)
+    created_at = models.DateTimeField(_('task created at'), auto_now_add=True, blank=True)
 
     def __str__(self):
         return self.alias
