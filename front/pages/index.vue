@@ -2,6 +2,7 @@
   <div>
     <nuxt-link to="/login"> Login Page</nuxt-link>
     <button id="logout-btn"  @click.prevent="logout">Logout Btn</button>
+    <button id="test-btn" @click.prevent="test_connections"> Test Btn </button>
   </div>
 
 </template>
@@ -11,7 +12,6 @@ import Vue from 'vue'
 
 export default Vue.extend({
   name: 'IndexPage',
-  middleware: ['auth'],
   data: ()=>{
     return {
       connections: []
@@ -19,19 +19,18 @@ export default Vue.extend({
   },
   methods:{
     logout(){
-      this.$auth.logout();
-      this.$router.push('/login');
+      this.$auth.logout().catch(err =>{
+      });
     },
     test_connections(){
       this.$axios.get('api/v1/connections/connections/').then(response=>{
         console.log(response.data);
-      }).catch(error=>{
-        console.error(error);
       })
     }
   },
-  mounted() {
-    setInterval(this.test_connections, 3000);
+  async mounted() {
+    //setInterval(this.test_connections, 3000);
+    // await this.$axios.get('api/v1/connections/connections/');
   }
 })
 </script>

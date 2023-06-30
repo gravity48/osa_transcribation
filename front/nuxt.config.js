@@ -26,6 +26,7 @@ export default {
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
+    '~/plugins/axios'
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -57,24 +58,31 @@ export default {
         token: {
           prefix: 'access.',
           property: 'access',
-          maxAge: 86400,
+          maxAge: parseInt(process.env.ACCESS_TOKEN_LIFETIME),
           type: 'Bearer'
         },
         refreshToken: {
           prefix: 'refresh.',
           property: 'refresh',
           data: 'refresh',
-          maxAge: 60 * 60 * 24 * 15
+          maxAge: parseInt(process.env.REFRESH_TOKEN_LIFETIME)
         },
         endpoints: {
           login: { url: 'api/v1/token/', method: 'post'},
           refresh: { url: 'api/v1/token/refresh/', method: 'post' },
-          user: false,
-          logout: false
+          logout: false,
+          user: false
         }
       }
-    }
 
+    },
+    redirect: {
+      login: '/login',
+      logout: '/login',
+      callback: '/',
+      home: '/'
+    },
+    watchLoggedIn: true
   },
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {
