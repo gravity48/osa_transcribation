@@ -1,4 +1,4 @@
-import { GetterTree, ActionTree, MutationTree } from 'vuex'
+import {GetterTree, ActionTree, MutationTree} from 'vuex'
 
 export const state = () => ({
   things: [] as string[],
@@ -16,9 +16,7 @@ export const mutations: MutationTree<RootState> = {
 }
 
 export const actions: ActionTree<RootState, RootState> = {
-  async fetchThings({ commit }) {
-    const things = await this.$axios.$get('/things')
-    console.log(things)
-    commit('CHANGE_NAME', 'New name')
+  async routeToLogin() {
+    this.$router.push('/login');
   },
 }

@@ -19,7 +19,7 @@
 
 </template>
 
-<script>
+<script lang="ts">
 import Vue from "vue";
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
@@ -43,10 +43,8 @@ export default Vue.extend({
     }
   },
   methods: {
-    login() {
-      this.$auth.loginWith('local', {data: this.auth_data}).then(response => {
-        return this.$auth.setUserToken(response.data.access, response.data.refresh)
-      })
+    async login() {
+      await this.$auth.loginWith('local', {data: this.auth_data})
     }
   }
 })
