@@ -49,6 +49,12 @@ export default {
 
   //Auth settings module
   auth: {
+    redirect: {
+      login: '/login',
+      logout: '/login',
+      callback: '/login',
+      home: '/'
+    },
     strategies: {
       local: {
         scheme: 'refresh',
@@ -75,14 +81,7 @@ export default {
         }
       }
 
-    },
-    redirect: {
-      login: '/login',
-      logout: '/login',
-      callback: '/',
-      home: '/'
-    },
-    watchLoggedIn: true
+    }
   },
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {
