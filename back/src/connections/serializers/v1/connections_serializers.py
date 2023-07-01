@@ -30,7 +30,7 @@ class ConnectionUpdateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ConnectionCreateSerializer(serializers.Serializer):
+class ConnectionCreateSerializer(serializers.ModelSerializer):
     alias = serializers.CharField(
         required=False,
         validators=[
@@ -40,6 +40,11 @@ class ConnectionCreateSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         return Connections.objects.create(**validated_data)
+
+    class Meta:
+        model = Connections
+        fields = ('id', 'alias')
+        extra_kwargs = {'id': {'read_only': True}}
 
 
 class CheckConnectionSerializer(serializers.ModelSerializer):
