@@ -1,11 +1,11 @@
 import asyncio
 import json
-import websockets
 import wave
+
+import websockets
 
 
 class VoskServer:
-
     @staticmethod
     def _words_extract(response, percent) -> set:
         words = set()
@@ -37,12 +37,7 @@ class VoskServer:
         words = set()
         wav_signal.rewind()
         async with websockets.connect(self.connection_string) as websocket:
-            conf = {
-                'config': {
-                    'sample_rate': wav_signal.getframerate(),
-                    'words': 1
-                }
-            }
+            conf = {'config': {'sample_rate': wav_signal.getframerate(), 'words': 1}}
             await websocket.send(json.dumps(conf, ensure_ascii=False))
             buffer_size = int(wav_signal.getframerate() * 0.2)
             while True:
@@ -67,7 +62,7 @@ class VoskServer:
                 'config': {
                     'sample_rate': wav_signal.getframerate(),
                     'words': 1,
-                }
+                },
             }
             await websocket.send(json.dumps(vosk_conf, ensure_ascii=False))
             buffer_size = int(wav_signal.getframerate() * 0.2)
@@ -88,11 +83,10 @@ class VoskServer:
                 conf = conf + conf_partial
                 text += f'{text_partial} '
             if conf:
-                con_int = sum(conf)/len(conf)
+                con_int = sum(conf) / len(conf)
                 return con_int, text
             else:
                 return con_int, text
-
 
     def recognize_chunk(self, wave_chunk):
         if wave_chunk:

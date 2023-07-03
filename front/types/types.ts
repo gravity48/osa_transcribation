@@ -12,5 +12,14 @@ interface Connections{
   db_status: number
 }
 
+interface ConnectionStatus{
+  id: number,
+  status_name: string
+}
 
-export {Connections}
+interface ConnectionSystem{
+  id: number,
+  name: string
+}
+
+export {Connections, ConnectionStatus, ConnectionSystem}

@@ -3,26 +3,25 @@ import wave
 from multiprocessing import Queue, Value
 from typing import Dict, List
 
-from loguru import logger
-
 from connect_celery.database import PostworkDB
 from decoder.decoder import postwork_decoder
+from loguru import logger
 from recognize_func import get_durations, search_keywords_in_set
 from vosk_server import VoskServer
 
 
 def keyword_identification_process(
-        queue: Queue,
-        is_run: Value,
-        db: Dict,
-        models: List[Dict],
-        alias: Dict,
-        item: int,
-        record_processed: Value,
-        active_time: int,
-        keywords: List,
-        percent: float,
-        debug=False,
+    queue: Queue,
+    is_run: Value,
+    db: Dict,
+    models: List[Dict],
+    alias: Dict,
+    item: int,
+    record_processed: Value,
+    active_time: int,
+    keywords: List,
+    percent: float,
+    debug=False,
 ):
     TRAIN_MODELS = []
 

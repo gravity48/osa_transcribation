@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-column ">
     <div class="col-10 flex align-items-center justify-content-end">
-      <div id="add-connection">
+      <div id="add-connection" @click.prevent="addConnections">
         <p><i class="pi pi-plus"></i> Добавить соединение</p>
       </div>
     </div>
@@ -10,12 +10,12 @@
         <li v-for="connection in connections">
           <div class="flex align-items-center justify-content-center">
             <p>{{ connection.alias }}</p>
-
           </div>
           <div class="flex align-items-center justify-content-center">
             <p>{{ connection.db_status }}</p>
             <i class="pi pi-refresh"></i>
-            <i class="pi pi-cog"></i>
+            <i class="pi pi-cog" @click.prevent="openConnection(connection.id)"></i>
+            <i class="pi pi-times" @click.prevent="removeConnection(connection.id)"></i>
           </div>
         </li>
       </ul>
@@ -23,7 +23,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import Vue from 'vue';
 import {mapActions, mapGetters} from 'vuex';
 
@@ -34,7 +34,10 @@ export default Vue.extend({
     ...mapGetters('connections', ['connections'])
   },
   methods: {
-    ...mapActions('connections', ['fetchConnections'])
+    ...mapActions('connections', ['fetchConnections', 'addConnections', 'removeConnection']),
+    openConnection(id: number){
+      this.$router.push(`connections/${id}/`);
+    }
   },
   mounted() {
     this.fetchConnections();
@@ -89,6 +92,5 @@ ul li div:last-child p{
   user-select: none;
   padding-right: 10px;
 }
-
 
 </style>

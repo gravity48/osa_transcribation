@@ -1,14 +1,19 @@
 import time
 from datetime import datetime
 
-from loguru import logger
-
 from connect_celery.database import PostworkDB
+from loguru import logger
 
 
 def control_process(queue, is_run, db_init, period_from, period_to, alias, *args, **kwargs):
-    db = PostworkDB(db_init['ip'], db_init['port'], db_init['db_login'], db_init['db_password'],
-                    db_init['db_name'], db_init['db_system'])
+    db = PostworkDB(
+        db_init['ip'],
+        db_init['port'],
+        db_init['db_login'],
+        db_init['db_password'],
+        db_init['db_name'],
+        db_init['db_system'],
+    )
     period_from = datetime.strptime(period_from, '%Y-%m-%dT%H:%M:%S%z')
     period_to = datetime.strptime(period_to, '%Y-%m-%dT%H:%M:%S%z')
     limit = 100
@@ -19,9 +24,19 @@ def control_process(queue, is_run, db_init, period_from, period_to, alias, *args
                 if queue.qsize() < limit:
                     break
                 time.sleep(5)
-            records, record_count = db.read_records_list(period_to, period_from, db_init['options'], 1)
+            records, record_count = db.read_records_list(
+                period_to,
+                period_from,
+                db_init['options'],
+                1,
+            )
             while not records:
-                records, record_count = db.read_records_list(period_to, period_from, db_init['options'], 1)
+                records, record_count = db.read_records_list(
+                    period_to,
+                    period_from,
+                    db_init['options'],
+                    1,
+                )
                 time.sleep(5)
             records_list += records
             record = records_list.pop(-1)

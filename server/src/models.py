@@ -1,13 +1,13 @@
 import io
 import json
-import wave
-import numpy as np
 import re
-from vosk import Model, KaldiRecognizer, SpkModel
+import wave
+
+import numpy as np
+from vosk import KaldiRecognizer, Model, SpkModel
 
 
 class TranscribingModel:
-
     @staticmethod
     def clean_text(text):
         text_clear = re.sub(r'[\s|\n]', '', text)
@@ -22,11 +22,15 @@ class TranscribingModel:
     def text_from_wav(self, filename):
         wav_text = ''
         wav_signal = wave.open(filename, 'rb')
-        if wav_signal.getnchannels() != 1 or wav_signal.getsampwidth() != 2 or wav_signal.getcomptype() != "NONE":
+        if (
+            wav_signal.getnchannels() != 1
+            or wav_signal.getsampwidth() != 2
+            or wav_signal.getcomptype() != "NONE"
+        ):
             print("Audio file must be WAV format mono PCM.")
         while True:
             data = wav_signal.readframes(4000)
-            #data = wav_signal.readframes(wav_signal.getnframes())
+            # data = wav_signal.readframes(wav_signal.getnframes())
             if not data:
                 break
             if self.recognizer.AcceptWaveform(data):
@@ -49,7 +53,11 @@ class TranscribingModel:
     def get_speaker_vector(self, filepath):
         wav_signal = wave.open(filepath, 'rb')
         data = wav_signal.readframes(wav_signal.getnframes())
-        if wav_signal.getnchannels() != 1 or wav_signal.getsampwidth() != 2 or wav_signal.getcomptype() != "NONE":
+        if (
+            wav_signal.getnchannels() != 1
+            or wav_signal.getsampwidth() != 2
+            or wav_signal.getcomptype() != "NONE"
+        ):
             print("Audio file must be WAV format mono PCM.")
         self.recognizer.AcceptWaveform(data)
         result = json.loads(self.recognizer.FinalResult())
@@ -73,11 +81,15 @@ class TranscribingModel:
     def _wav_to_text(self, speech_data):
         wav_stream = io.BytesIO(speech_data)
         wav_signal = wave.open(wav_stream, 'rb')
-        if wav_signal.getnchannels() != 1 or wav_signal.getsampwidth() != 2 or wav_signal.getcomptype() != "NONE":
+        if (
+            wav_signal.getnchannels() != 1
+            or wav_signal.getsampwidth() != 2
+            or wav_signal.getcomptype() != "NONE"
+        ):
             print("Audio file must be WAV format mono PCM.")
         while True:
             data = wav_signal.readframes(4000)
-            #data = wav_signal.readframes(wav_signal.getnframes())
+            # data = wav_signal.readframes(wav_signal.getnframes())
             if not data:
                 break
             self.recognizer.AcceptWaveform(data)
@@ -99,7 +111,7 @@ class TranscribingModel:
         try:
             for word in result_json['result']:
                 conf += word['conf']
-            conf = conf/len(result_json['result'])
+            conf = conf / len(result_json['result'])
             return conf, result_json['text']
         except Exception as e:
             return 0, result_json['text']
@@ -128,7 +140,7 @@ class TranscribingModel:
         wav_stream = io.BytesIO(speech_data)
         wav_signal = wave.open(wav_stream, 'rb')
         while True:
-            #data = wav_signal.readframes(4000)
+            # data = wav_signal.readframes(4000)
             data = wav_signal.readframes(wav_signal.getnframes())
             if not data:
                 break

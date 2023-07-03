@@ -4,11 +4,16 @@ from unittest import TestCase
 
 from connect_celery.database import PostworkDB
 from decoder.decoder import postwork_decoder
-from settings import TEST_DB_HOST, TEST_DB_PORT, TEST_DB_LOGIN, TEST_DB_PASSWORD, TEST_DB_NAME
+from settings import (
+    TEST_DB_HOST,
+    TEST_DB_LOGIN,
+    TEST_DB_NAME,
+    TEST_DB_PASSWORD,
+    TEST_DB_PORT,
+)
 
 
 class ReplicaDecoderTest(TestCase):
-
     def setUp(self) -> None:
         self.db_dict = {
             'ip': TEST_DB_HOST,
@@ -16,9 +21,7 @@ class ReplicaDecoderTest(TestCase):
             'db_login': TEST_DB_LOGIN,
             'db_password': TEST_DB_PASSWORD,
             'db_name': TEST_DB_NAME,
-            'db_system': {
-                'name': 'Postgres'
-            }
+            'db_system': {'name': 'Postgres'},
         }
         self.database = PostworkDB(
             **self.db_dict,
@@ -31,7 +34,7 @@ class ReplicaDecoderTest(TestCase):
             shell=True,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            preexec_fn=os.setsid
+            preexec_fn=os.setsid,
         )
         process.wait()
         out, err = process.communicate()
