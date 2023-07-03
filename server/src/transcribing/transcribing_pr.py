@@ -1,11 +1,10 @@
 import io
 import wave
 
-from loguru import logger
-
 from connect_celery.database import PostworkDB
 from decoder.decoder import postwork_decoder
-from recognize_func import get_durations, format_text
+from loguru import logger
+from recognize_func import format_text, get_durations
 from vosk_server import VoskServer
 
 
@@ -36,7 +35,14 @@ def transcribing_process(queue, is_run, db, models, alias, item, record_processe
         train_model = VoskServer(model['ip'], model['port'])
         TRAIN_MODELS.append(train_model)
 
-    postwork_db = PostworkDB(db['ip'], db['port'], db['db_login'], db['db_password'], db['db_name'], db['db_system'])
+    postwork_db = PostworkDB(
+        db['ip'],
+        db['port'],
+        db['db_login'],
+        db['db_password'],
+        db['db_name'],
+        db['db_system'],
+    )
     while is_run.value:
         record_id = queue.get()
         try:

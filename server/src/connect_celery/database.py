@@ -1,14 +1,29 @@
-import fdb, copy, datetime
+import copy
+import datetime
 from functools import wraps
+
+import fdb
 import psycopg2
-from sqlalchemy import create_engine
+from sqlalchemy import (
+    BLOB,
+    TIMESTAMP,
+    VARCHAR,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Sequence,
+    SmallInteger,
+    String,
+    Text,
+    Time,
+    create_engine,
+)
+from sqlalchemy.dialects import registry
+from sqlalchemy.exc import DatabaseError
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.orm.session import Session
-from sqlalchemy.dialects import registry
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.exc import DatabaseError
-from sqlalchemy import Integer, Text, Column, TIMESTAMP, ForeignKey, Sequence, String, Time, VARCHAR, BLOB, DateTime, \
-    SmallInteger
 
 Base = declarative_base()
 
@@ -118,16 +133,24 @@ class SPR_SP_COMMENT_TABLE(Base):
 class PostworkDB:
     @open_session
     def read_data_from_id(self, s_inckey, session=None):
-        data = session.query(SPR_SP_DATA_1_TABLE.s_fspeech, SPR_SP_DATA_1_TABLE.s_rspeech,
-                             SPR_SP_DATA_1_TABLE.s_recordtype).filter(
-            SPR_SP_DATA_1_TABLE.s_inckey == s_inckey).all()
+        data = (
+            session.query(
+                SPR_SP_DATA_1_TABLE.s_fspeech,
+                SPR_SP_DATA_1_TABLE.s_rspeech,
+                SPR_SP_DATA_1_TABLE.s_recordtype,
+            )
+            .filter(SPR_SP_DATA_1_TABLE.s_inckey == s_inckey)
+            .all()
+        )
         return data
 
     @open_session
     def add_comment_to_record(self, s_inckey, comment: str, session: Session = None):
         # comment = comment.encode('cp1251')
         comment = comment.encode('UTF8')
-        sp_comment_table: SPR_SP_COMMENT_TABLE = session.query(SPR_SP_COMMENT_TABLE).filter_by(s_inckey=s_inckey).all()
+        sp_comment_table: SPR_SP_COMMENT_TABLE = (
+            session.query(SPR_SP_COMMENT_TABLE).filter_by(s_inckey=s_inckey).all()
+        )
         if not sp_comment_table:
             session.add(SPR_SP_COMMENT_TABLE(s_inckey, comment))
         else:
@@ -138,19 +161,24 @@ class PostworkDB:
     @open_session
     def mark_record_in_queue(self, s_inckey, session: Session = None):
         session.query(SPR_SPEECH_TABLE).filter(SPR_SPEECH_TABLE.s_inckey == s_inckey).update(
-            {'s_decryptinfo': 'in_queue'})
+            {'s_decryptinfo': 'in_queue'},
+        )
         session.commit()
         pass
 
     @open_session
     def mark_record(self, s_inckey, session: Session = None):
-        session.query(SPR_SPEECH_TABLE).filter(SPR_SPEECH_TABLE.s_inckey == s_inckey).update({'s_decryptinfo': '+'})
+        session.query(SPR_SPEECH_TABLE).filter(SPR_SPEECH_TABLE.s_inckey == s_inckey).update(
+            {'s_decryptinfo': '+'},
+        )
         session.commit()
         pass
 
     @open_session
     def mark_record_empty(self, s_inckey, session: Session = None):
-        session.query(SPR_SPEECH_TABLE).filter(SPR_SPEECH_TABLE.s_inckey == s_inckey).update({'s_notice': 'empty'})
+        session.query(SPR_SPEECH_TABLE).filter(SPR_SPEECH_TABLE.s_inckey == s_inckey).update(
+            {'s_notice': 'empty'},
+        )
         session.commit()
         pass
 
@@ -169,7 +197,9 @@ class PostworkDB:
 
     @open_session
     def unmark_record(self, s_inckey, session: Session = None):
-        session.query(SPR_SPEECH_TABLE).filter(SPR_SPEECH_TABLE.s_inckey == s_inckey).update({'s_decryptinfo': None})
+        session.query(SPR_SPEECH_TABLE).filter(SPR_SPEECH_TABLE.s_inckey == s_inckey).update(
+            {'s_decryptinfo': None},
+        )
         session.commit()
         pass
 
@@ -198,25 +228,20 @@ class PostworkDB:
             SPR_SPEECH_TABLE.s_datetime <= period_to,
             SPR_SPEECH_TABLE.s_decryptinfo.is_(None),
             SPR_SPEECH_TABLE.s_duration <= time_duration_max,
-            SPR_SPEECH_TABLE.s_duration >= time_duration_min
+            SPR_SPEECH_TABLE.s_duration >= time_duration_min,
         )
         if 'post' in options:
-            request_basis = request_basis.filter(
-                SPR_SPEECH_TABLE.s_postid == options['post']
-            )
+            request_basis = request_basis.filter(SPR_SPEECH_TABLE.s_postid == options['post'])
         if 'selection' in options:
             request_basis = request_basis.filter(
                 SPR_SPEECH_TABLE.s_talkername.is_(None),
-                SPR_SPEECH_TABLE.s_sourcename.is_(None)
+                SPR_SPEECH_TABLE.s_sourcename.is_(None),
             )
         request_basis = request_basis.join(
             SPR_SP_DATA_1_TABLE,
-            SPR_SP_DATA_1_TABLE.s_inckey == SPR_SPEECH_TABLE.s_inckey
-        ).filter(
-            SPR_SP_DATA_1_TABLE.s_recordtype.in_(self.codecs)
-        )
-        request_basis = request_basis.order_by(
-            SPR_SPEECH_TABLE.s_datetime)
+            SPR_SP_DATA_1_TABLE.s_inckey == SPR_SPEECH_TABLE.s_inckey,
+        ).filter(SPR_SP_DATA_1_TABLE.s_recordtype.in_(self.codecs))
+        request_basis = request_basis.order_by(SPR_SPEECH_TABLE.s_datetime)
         if limit:
             request_basis = request_basis.limit(limit).offset(offset)
         records = request_basis.all()
@@ -234,14 +259,34 @@ class PostworkDB:
     def connect(self):
         connect = None
         if self._db_system == 'Postgres':
-            connect = psycopg2.connect(dsn=self._dsn, user=self._user, password=self._password, charset=self._charset)
+            connect = psycopg2.connect(
+                dsn=self._dsn,
+                user=self._user,
+                password=self._password,
+                charset=self._charset,
+            )
         elif self._db_system == 'Firebird':
-            connect = fdb.connect(dsn=self._dsn, user=self._user, password=self._password,
-                                  charset=self._charset)
+            connect = fdb.connect(
+                dsn=self._dsn,
+                user=self._user,
+                password=self._password,
+                charset=self._charset,
+            )
         self._is_connect = True
         return connect
 
-    def __init__(self, ip, port, db_login, db_password, db_name, db_system, charset='WIN1251', *args, **kwargs):
+    def __init__(
+        self,
+        ip,
+        port,
+        db_login,
+        db_password,
+        db_name,
+        db_system,
+        charset='WIN1251',
+        *args,
+        **kwargs,
+    ):
         connection_str = ''
         self._dsn = f'{ip}/{port}:{db_name}'
         self._user = db_login
@@ -252,19 +297,29 @@ class PostworkDB:
         if db_system['name'] == 'Postgres':
             connection_str = f'postgresql+psycopg2://{db_login}:{db_password}@{ip}:{port}/{db_name}'
         elif db_system['name'] == 'Firebird':
-            connection_str = f'firebird+fdb://{db_login}:{db_password}@{ip}:{port}/{db_name}?&charset={charset}'
+            connection_str = (
+                f'firebird+fdb://{db_login}:{db_password}@{ip}:{port}/{db_name}?&charset={charset}'
+            )
         self._engine = create_engine(
             connection_str,
-            connect_args={"application_name": "OSA transcribation"}
+            connect_args={"application_name": "OSA transcribation"},
         )
         self.session_master = sessionmaker(bind=self._engine)
         self.cursor = None
-        self.codecs = ['GSM', ]
+        self.codecs = [
+            'GSM',
+        ]
 
 
 if __name__ == '__main__':
     # db_postwork.unmark_all_records(1)
-    data, record_count = db_postwork.read_records_list(period_to, period_from, {'post': 'POROZ'}, 100, 0)
+    data, record_count = db_postwork.read_records_list(
+        period_to,
+        period_from,
+        {'post': 'POROZ'},
+        100,
+        0,
+    )
     db_postwork.mark_record_find_keyword(22, 'hello')
     print(data)
     print(data[0][0])

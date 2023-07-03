@@ -1,12 +1,11 @@
 import json
-import threading
 import socketserver
+import threading
 from collections import namedtuple
 from json import JSONDecodeError
 
 from connect_celery.database import PostworkDB
 from loguru import logger
-
 from settings import SERVER_HOST, SERVER_PORT
 from transcribing.manager import TranscribingTask
 
@@ -63,9 +62,7 @@ class TranscribingServer(socketserver.BaseRequestHandler):
 
     def check_connection(self, data):
         status = PostworkDB(**data).try_connection()
-        context = {
-            'status': status
-        }
+        context = {'status': status}
         self.send(context)
 
     def start_task(self, data):
@@ -78,9 +75,7 @@ class TranscribingServer(socketserver.BaseRequestHandler):
         if data['task_type']['id'] == KeywordsIdentificationsTaskType:
             transcribing_task.search_keywords()
         self.TASK_RUNNING[data['id']] = transcribing_task
-        context = {
-            'status': True
-        }
+        context = {'status': True}
         self.send(context)
 
     def stop_task(self, data_json):

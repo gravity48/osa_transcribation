@@ -1,4 +1,4 @@
-from multiprocessing import Value, Queue, Process
+from multiprocessing import Process, Queue, Value
 
 from loguru import logger
 
@@ -21,8 +21,20 @@ class TranscribingTask:
             percent = 0.9
         return keywords, percent
 
-    def __init__(self, db, model, task_type, alias, period_from, period_to, thread_count,
-                 time_processing, options, *args, **kwargs):
+    def __init__(
+        self,
+        db,
+        model,
+        task_type,
+        alias,
+        period_from,
+        period_to,
+        thread_count,
+        time_processing,
+        options,
+        *args,
+        **kwargs,
+    ):
         self.db_init = db
         self.period_to = period_to
         self.period_from = period_from
@@ -34,9 +46,12 @@ class TranscribingTask:
         self.keywords, self.percent = self.options_parse(self.options)
         # self.spk_model = kwargs['spk_model']
         self.log = f'logs/{alias}.log'
-        self.task_logger = logger.add(self.log, filter=lambda record: alias in record["extra"],
-                                      format="{time} {level} {message}",
-                                      level="INFO")
+        self.task_logger = logger.add(
+            self.log,
+            filter=lambda record: alias in record["extra"],
+            format="{time} {level} {message}",
+            level="INFO",
+        )
         self.process_pool = []
         self.control_process = None
         self.records_processed = Value('i', 0)
@@ -62,15 +77,26 @@ class TranscribingTask:
         queue = Queue()
         for item in range(self.thread_count):
             self.process_pool.append(
-                Process(target=transcribing_process,
-                        args=(queue, self.is_run, self.db_init, self.models, self.alias, item, self.records_processed,
-                              self.options['speech_time'])))
+                Process(
+                    target=transcribing_process,
+                    args=(
+                        queue,
+                        self.is_run,
+                        self.db_init,
+                        self.models,
+                        self.alias,
+                        item,
+                        self.records_processed,
+                        self.options['speech_time'],
+                    ),
+                ),
+            )
             self.process_pool[-1].start()
         logger.bind(**self.alias).info('Read data from database')
-        self.control_process = Process(target=control_process,
-                                       args=(
-                                           queue, self.is_run, self.db_init, self.period_from, self.period_to,
-                                           self.alias))
+        self.control_process = Process(
+            target=control_process,
+            args=(queue, self.is_run, self.db_init, self.period_from, self.period_to, self.alias),
+        )
         self.control_process.start()
 
     def pause_identification(self):
@@ -79,13 +105,25 @@ class TranscribingTask:
         queue = Queue()
         for item in range(self.thread_count):
             self.process_pool.append(
-                Process(target=pause_identification_process,
-                        args=(queue, self.is_run, self.db_init, self.alias, item, self.records_processed,
-                              self.options['speech_time'])))
+                Process(
+                    target=pause_identification_process,
+                    args=(
+                        queue,
+                        self.is_run,
+                        self.db_init,
+                        self.alias,
+                        item,
+                        self.records_processed,
+                        self.options['speech_time'],
+                    ),
+                ),
+            )
             self.process_pool[-1].start()
         logger.bind(**self.alias).info('Read data from database')
-        self.control_process = Process(target=control_process,
-                                       args=(queue, self.is_run, self.db_init, self.period_from, self.period_to))
+        self.control_process = Process(
+            target=control_process,
+            args=(queue, self.is_run, self.db_init, self.period_from, self.period_to),
+        )
         self.control_process.start()
         pass
 
@@ -95,13 +133,26 @@ class TranscribingTask:
         queue = Queue()
         for item in range(self.thread_count):
             self.process_pool.append(
-                Process(target=keyword_identification_process,
-                        args=(queue, self.is_run, self.db_init, self.models, self.alias, item, self.records_processed,
-                              self.options['speech_time'], self.keywords, self.percent)))
+                Process(
+                    target=keyword_identification_process,
+                    args=(
+                        queue,
+                        self.is_run,
+                        self.db_init,
+                        self.models,
+                        self.alias,
+                        item,
+                        self.records_processed,
+                        self.options['speech_time'],
+                        self.keywords,
+                        self.percent,
+                    ),
+                ),
+            )
             self.process_pool[-1].start()
         logger.bind(**self.alias).info('Read data from database')
-        self.control_process = Process(target=control_process,
-                                       args=(
-                                           queue, self.is_run, self.db_init, self.period_from, self.period_to,
-                                           self.alias))
+        self.control_process = Process(
+            target=control_process,
+            args=(queue, self.is_run, self.db_init, self.period_from, self.period_to, self.alias),
+        )
         self.control_process.start()

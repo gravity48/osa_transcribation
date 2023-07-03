@@ -1,13 +1,19 @@
 import re
+
 from pydub import AudioSegment, effects
-from pydub.silence import split_on_silence
 from pydub.exceptions import CouldntDecodeError
+from pydub.silence import split_on_silence
 
 
 def get_duration(stream):
     try:
         sound = AudioSegment(stream)
-        audio_chunks = split_on_silence(sound, min_silence_len=100, silence_thresh=-45, keep_silence=50)
+        audio_chunks = split_on_silence(
+            sound,
+            min_silence_len=100,
+            silence_thresh=-45,
+            keep_silence=50,
+        )
         combined = AudioSegment.empty()
         for chunk in audio_chunks:
             combined += chunk
@@ -27,15 +33,20 @@ def format_text(f_text, r_text, model_name):
 def silens_split(stream):
     try:
         combined = AudioSegment.empty()
-        sound = AudioSegment(stream,  channels=1, frame_rate=8000, sample_width=2)
-        audio_chunks = split_on_silence(sound, min_silence_len=2000, silence_thresh=-45, keep_silence=2000)
+        sound = AudioSegment(stream, channels=1, frame_rate=8000, sample_width=2)
+        audio_chunks = split_on_silence(
+            sound,
+            min_silence_len=2000,
+            silence_thresh=-45,
+            keep_silence=2000,
+        )
         normalize_chunks = []
         for chunk in audio_chunks:
             chunk = effects.normalize(chunk)
             normalize_chunks.append(chunk)
             combined += chunk
-        #combined.export('555.wav', format='wav')
-        #sound.export('555.wav', format='wav')
+        # combined.export('555.wav', format='wav')
+        # sound.export('555.wav', format='wav')
         return combined.duration_seconds, normalize_chunks
     except Exception as e:
         return 0, None

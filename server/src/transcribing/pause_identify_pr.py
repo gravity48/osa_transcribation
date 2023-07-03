@@ -1,12 +1,18 @@
-from loguru import logger
-
 from connect_celery.database import PostworkDB
 from decoder.decoder import postwork_decoder
+from loguru import logger
 from recognize_func import get_durations
 
 
 def pause_identification_process(queue, is_run, db, alias, item, record_processed, time_min):
-    postwork_db = PostworkDB(db['ip'], db['port'], db['db_login'], db['db_password'], db['db_name'], db['db_system'])
+    postwork_db = PostworkDB(
+        db['ip'],
+        db['port'],
+        db['db_login'],
+        db['db_password'],
+        db['db_name'],
+        db['db_system'],
+    )
     while is_run.value:
         record_id = queue.get()
         try:

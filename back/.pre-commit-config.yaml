@@ -1,4 +1,4 @@
-files: 'src*'
+files: 'back/src*'
 repos:
   - repo: https://github.com/psf/black
     rev: 23.3.0

@@ -1,12 +1,11 @@
 import threading
 import time
 from datetime import datetime
-from multiprocessing.pool import ThreadPool, Pool
 from multiprocessing import Process
+from multiprocessing.pool import Pool, ThreadPool
 
 
 class WorkProcess:
-
     def __init__(self, process, run_time, pool):
         self.process: Process = process
         self.run_time = run_time
@@ -14,7 +13,6 @@ class WorkProcess:
 
 
 class QueueProcess:
-
     def __init__(self, func, args, kwargs):
         self.func = func
         self.args = args
@@ -22,7 +20,6 @@ class QueueProcess:
 
 
 class CustomProcess:
-
     def add_task_thread(self, event):
         while not event.is_set():
             if self.queue_process:
@@ -31,8 +28,14 @@ class CustomProcess:
                     if len(self.processes_list) < self.process_count:
                         process = Pool(1)
                         work_process = WorkProcess(
-                            process.apply_async(line_process.func, line_process.args, line_process.kwargs),
-                            datetime.now(), process)
+                            process.apply_async(
+                                line_process.func,
+                                line_process.args,
+                                line_process.kwargs,
+                            ),
+                            datetime.now(),
+                            process,
+                        )
                         # work_process.process.start()
                         self.processes_list.append(work_process)
                         break
