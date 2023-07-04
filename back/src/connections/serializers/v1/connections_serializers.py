@@ -4,12 +4,6 @@ from rest_framework.validators import UniqueValidator
 
 
 class ConnectionListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Connections
-        fields = '__all__'
-
-
-class ConnectionRetrieveSerializer(serializers.ModelSerializer):
     db_system = serializers.SlugRelatedField(
         slug_field='name',
         read_only=True,
@@ -18,6 +12,13 @@ class ConnectionRetrieveSerializer(serializers.ModelSerializer):
         slug_field='status_name',
         read_only=True,
     )
+
+    class Meta:
+        model = Connections
+        fields = '__all__'
+
+
+class ConnectionRetrieveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Connections
