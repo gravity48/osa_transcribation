@@ -1,11 +1,12 @@
 <template>
   <div>
-    <h3>Соединение {{ con_detail.alias }}</h3>
+    <h3>Соединение {{ connection.alias }}</h3>
     <div id='conn-params' class="flex flex-row">
       <div id="required-params">
         <Dropdown
-          v-model="con_detail.db_status"
+          v-model="connection.db_system"
           :options="conn_system"
+          optionValue="code"
           style="min-width: 14rem"
           optionLabel="name"
           placeholder="Select a City"
@@ -19,33 +20,28 @@
 </template>
 
 <script setup lang="ts">
+import {useRoute, useStore, useContext, useAsync, ssrRef, computed, watch} from "@nuxtjs/composition-api";
+import {useConnection} from '~/composables/connection';
+import Dropdown from "primevue/dropdown/Dropdown";
 
+const route = useRoute();
+const store = useStore();
+const {$axios} = useContext();
 
-// import Vue from 'vue';
-// import {mapActions, mapGetters} from "vuex"
-// import Dropdown from 'primevue/dropdown';
+const conn_system = computed(() => store.getters['conn_system']);
+const conn_status = computed(() => store.getters['conn_status']);
 
+const {connection, fetchConnection, watcherConnection} = useConnection();
 
+useAsync(
+  async () => {
+    connection.value = await fetchConnection(route.value.params.id)
+    await store.dispatch('fetch');
+  }
+);
 
-// export default Vue.extend({
-//   name: "index",
-//   async fetch({store}) {
-//     await store.dispatch("fetch");
-//   },
-//   components: {
-//     Dropdown,
-//   },
-//   methods: {
-//     ...mapActions('connections', ['retrieveConnection'])
-//   },
-//   mounted() {
-//     this.retrieveConnection(this.$route.params.id);
-//   },
-//   computed: {
-//     ...mapGetters('connections', ['con_detail']),
-//     ...mapGetters(['conn_status', 'conn_system']),
-//   }
-// })
+watch(connection, watcherConnection, {deep: true, flush: 'post'});
+
 </script>
 
 <style scoped>
