@@ -36,7 +36,7 @@ export default Vue.extend({
   methods: {
     ...mapActions('connections', ['fetchConnections', 'addConnections', 'removeConnection']),
     openConnection(id: number){
-      this.$router.push(`connections/${id}/`);
+      this.$router.push(`/connections/${id}/`);
     }
   },
   mounted() {

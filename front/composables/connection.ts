@@ -1,19 +1,16 @@
 import {
   useContext,
-  ssrRef,
-  useAsync,
-  useFetch,
-  ref,
-  computed,
-  defineComponent,
-  useRoute,
-  watch, useStore
+  ssrRef
 } from '@nuxtjs/composition-api';
 import {Connections} from "~/types/types";
 
+let timeout:  ReturnType<typeof setTimeout>;
+
 export const useConnection = () => {
   const {$axios} = useContext();
-  const connection = ssrRef<Connections | Object>({});
+  const connection = ssrRef<Connections | Object>({
+    options: {}
+  });
 
   const fetchConnection = async (pk: string) => {
     return $axios.get(`api/v1/connections/connections/${pk}/`).then(r => r.data);
@@ -22,33 +19,14 @@ export const useConnection = () => {
   const watcherConnection = (newConn: Connections | Object, oldConn: Connections | Object) => {
     if ('id' in newConn && 'id' in oldConn) {
       if (newConn.id === oldConn.id) {
-        console.log(newConn.db_system);
-        debugger
-        $axios.put(`api/v1/connections/connections/${newConn.id}/`, newConn).catch(error=>{
+        clearTimeout(timeout)
+        timeout = setTimeout( () => $axios.put(`api/v1/connections/connections/${newConn.id}/`, newConn).catch(error=>{
           console.log(error);
-        });
+        }), 1000)
+
       }
     }
   }
-
-
-  // watch(connection, (newId, oldId, onCleanup)=>{
-  //     debugger
-  //     console.log('change')
-  //   },
-  //   {deep: true}
-  // );
-  //
-  //
-
-  // const fetchConnection = async () => {
-  //   $axios.get(`api/v1/connections/connections/${route.value.params.id}/`)
-  //     .then(response => connection.value = response.data)
-  // }
-  //
-  // useAsync(
-  //   fetchConnection
-  // )
 
   return {
     connection,
