@@ -22,4 +22,37 @@ interface ConnectionSystem{
   name: string
 }
 
-export {Connections, ConnectionStatus, ConnectionSystem}
+interface RecognizeServer{
+  id: number,
+  name: string,
+  short_name: string,
+  ip: string,
+  port: number
+}
+
+interface TaskType{
+  id: number,
+  name: string
+}
+
+interface Task{
+  id: number,
+  alias: string,
+  db: number | string
+  thread_count?: number,
+  task_type?: string,
+  status?: string,
+  model?: number,
+  period_from?: Date,
+  period_to?: Date,
+  options?: Object,
+  created_at?: Date,
+}
+
+
+export {
+  Connections,
+  ConnectionStatus,
+  ConnectionSystem,
+  Task
+}
