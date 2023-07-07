@@ -29,7 +29,7 @@ let router = useRouter();
 const {tasks, addTask, removeTask} = TasksList();
 
 const taskDetail= (id: number) => {
-  router.push(`tasks/${id}`);
+  router.push(`/tasks/${id}/`);
 }
 
 </script>

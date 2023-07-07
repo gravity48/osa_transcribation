@@ -54,14 +54,12 @@ const route = useRoute();
 const store = useStore();
 
 const conn_system = computed(() => store.getters['conn_system']);
-const conn_status = computed(() => store.getters['conn_status']);
 
 const {connection, fetchConnection, watcherConnection} = useConnection();
 
 useAsync(
   async () => {
-    connection.value = await fetchConnection(route.value.params.id)
-    await store.dispatch('fetch');
+    connection.value = await fetchConnection(route.value.params.id);
   }
 );
 

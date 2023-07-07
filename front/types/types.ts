@@ -9,7 +9,7 @@ interface Connections{
   created_at: Date,
   options: Object,
   db_system: number,
-  db_status: number
+  db_status: number | string
 }
 
 interface ConnectionStatus{
@@ -35,6 +35,11 @@ interface TaskType{
   name: string
 }
 
+interface TaskStatus{
+  id: number,
+  status: string
+}
+
 interface Task{
   id: number,
   alias: string,
@@ -45,7 +50,7 @@ interface Task{
   model?: number,
   period_from?: Date,
   period_to?: Date,
-  options?: Object,
+  options: Object,
   created_at?: Date,
 }
 
@@ -54,5 +59,7 @@ export {
   Connections,
   ConnectionStatus,
   ConnectionSystem,
-  Task
+  Task,
+  TaskStatus,
+  RecognizeServer
 }
