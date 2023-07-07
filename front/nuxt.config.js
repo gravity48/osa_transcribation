@@ -6,22 +6,22 @@ export default {
       lang: 'en'
     },
     meta: [
-      { charset: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { hid: 'description', name: 'description', content: '' },
-      { name: 'format-detection', content: 'telephone=no' }
+      {charset: 'utf-8'},
+      {name: 'viewport', content: 'width=device-width, initial-scale=1'},
+      {hid: 'description', name: 'description', content: ''},
+      {name: 'format-detection', content: 'telephone=no'}
     ],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+      {rel: 'icon', type: 'image/x-icon', href: '/favicon.ico'}
     ],
-    bodyAttrs:{
+    bodyAttrs: {
       class: 'p-0 m-0'
     }
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
-      'primeflex/primeflex.css'
+    'primeflex/primeflex.css'
   ],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
@@ -75,8 +75,8 @@ export default {
           maxAge: parseInt(process.env.REFRESH_TOKEN_LIFETIME)
         },
         endpoints: {
-          login: { url: 'api/v1/token/', method: 'post'},
-          refresh: { url: 'api/v1/token/refresh/', method: 'post' },
+          login: {url: 'api/v1/token/', method: 'post'},
+          refresh: {url: 'api/v1/token/refresh/', method: 'post'},
           logout: false,
           user: false
         }
@@ -96,6 +96,9 @@ export default {
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
     // https://github.com/primefaces/primevue/issues/844
-    transpile: ['primevue']
+    transpile: [
+      'primevue',
+      '@vuepic/vue-datepicker'
+    ]
   }
 }
