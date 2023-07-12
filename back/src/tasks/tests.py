@@ -31,6 +31,8 @@ class TasksTest(BaseTestView, TestCase):
         data = {
             'alias': '123',
             'model': [model.id, model2.id],
+            'period_from': '1992-09-09',
+            'period_to': '2023-10-10',
         }
         self.client.force_authenticate(self.user)
         response = self.client.put(f'{self.url}{task.id}/', data)

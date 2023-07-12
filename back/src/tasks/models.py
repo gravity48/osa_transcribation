@@ -81,7 +81,7 @@ class Tasks(models.Model):
     alias = models.CharField(_('task alias'), max_length=100, unique=True, default=generate_hash)
     period_from = models.DateTimeField(
         _('task period from'),
-        auto_now_add=True
+        default=datetime.now,
     )
     period_to = models.DateTimeField(
         _('task period to'),
