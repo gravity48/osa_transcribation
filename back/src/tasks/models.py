@@ -1,8 +1,10 @@
+from datetime import datetime, timedelta
+
 from connections.models import Connections
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
-from utils.services import generate_hash
+from utils.services import generate_hash, default_period_date
 
 PLAY_STATUS_TASK = 1
 STOP_STATUS_TASK = 2
@@ -77,8 +79,14 @@ class Tasks(models.Model):
         blank=True,
     )
     alias = models.CharField(_('task alias'), max_length=100, unique=True, default=generate_hash)
-    period_from = models.DateTimeField(_('task period from'), blank=True, null=True)
-    period_to = models.DateTimeField(_('task period to'), blank=True, null=True)
+    period_from = models.DateTimeField(
+        _('task period from'),
+        auto_now_add=True
+    )
+    period_to = models.DateTimeField(
+        _('task period to'),
+        default=default_period_date
+    )
     thread_count = models.IntegerField(_('process count'), default=1)
     options = models.JSONField(_('task options'), default=dict, blank=True)
     created_at = models.DateTimeField(_('task created at'), auto_now_add=True, blank=True)
