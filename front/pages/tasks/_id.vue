@@ -63,8 +63,6 @@ import InputNumber from 'primevue/inputnumber';
 import MultiSelect from 'primevue/multiselect';
 import Calendar from 'primevue/calendar';
 
-import VueDatePicker from "@vuepic/vue-datepicker";
-import "@vuepic/vue-datepicker/dist/main.css";
 
 import {taskDetail} from "~/composables/tasks/detail";
 import {computed, useAsync, useContext, watch} from "@nuxtjs/composition-api";

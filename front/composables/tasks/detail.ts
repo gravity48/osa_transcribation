@@ -13,7 +13,13 @@ export const taskDetail = (pk: string) => {
   });
 
   useAsync(async () => {
-    task.value = await $axios.get(`api/v1/tasks/tasks/${pk}`).then(r => r.data);
+    task.value = await $axios.get(`api/v1/tasks/tasks/${pk}`).then(
+      r => {
+        r.data.period_from = new Date(r.data.period_from);
+        r.data.period_to = new Date(r.data.period_to);
+        return r.data;
+      }
+    );
   }, pk);
 
   const watchTask = (newTask: Task, oldTask: Task) =>{
