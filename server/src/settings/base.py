@@ -7,8 +7,6 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '../../.env'))
 
 SERVER_HOST = os.environ['SERVER_HOST']
 SERVER_PORT = int(os.environ['SERVER_PORT'])
-<<<<<<< HEAD
-=======
 
 STATUS_TIMEOUT = int(os.environ['STATUS_TIMEOUT'])
 
@@ -19,4 +17,4 @@ MAX_DURATION = datetime.time(0, int(os.environ['MAX_DURATION']), 0)
 
 time_duration_max = datetime.time(0, 30, 0)
 time_duration_min = datetime.time(0, 0, 5)
->>>>>>> e64f36e (server refactoring)
+

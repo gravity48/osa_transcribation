@@ -2,32 +2,6 @@ import os
 import subprocess
 from unittest import TestCase
 
-<<<<<<< HEAD
-from connect_celery.database import PostworkDB
-from decoder.decoder import postwork_decoder
-from settings import (
-    TEST_DB_HOST,
-    TEST_DB_LOGIN,
-    TEST_DB_NAME,
-    TEST_DB_PASSWORD,
-    TEST_DB_PORT,
-)
-
-
-class ReplicaDecoderTest(TestCase):
-    def setUp(self) -> None:
-        self.db_dict = {
-            'ip': TEST_DB_HOST,
-            'port': TEST_DB_PORT,
-            'db_login': TEST_DB_LOGIN,
-            'db_password': TEST_DB_PASSWORD,
-            'db_name': TEST_DB_NAME,
-            'db_system': {'name': 'Postgres'},
-        }
-        self.database = PostworkDB(
-            **self.db_dict,
-        )
-=======
 from decoder.factory import DecoderFactory
 from services.sprut import SprutService
 from tests.base import BaseTest
@@ -36,7 +10,6 @@ from tests.base import BaseTest
 class ReplicaDecoderTest(BaseTest, TestCase):
     def setUp(self) -> None:
         self.sprut_service = SprutService(self.db.session)
->>>>>>> e64f36e (server refactoring)
 
     def test_010_run_replica_decoder_without_args(self):
         action = 'replica_decoder/replica_decoder'

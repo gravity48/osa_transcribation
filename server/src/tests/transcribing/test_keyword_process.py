@@ -1,10 +1,4 @@
 from unittest import TestCase
-
-<<<<<<< HEAD
-from connect_celery.database import PostworkDB
-from loguru import logger
-=======
->>>>>>> e64f36e (server refactoring)
 from settings import (
     TEST_DB_HOST,
     TEST_DB_LOGIN,
@@ -16,18 +10,11 @@ from settings import (
     TEST_UA_VOSK_HOST,
     TEST_UA_VOSK_PORT,
 )
-<<<<<<< HEAD
-from transcribing.keyword_pr import keyword_identification_process
-
-
-class KeywordProcessTest(TestCase):
-=======
 from tests.base import BaseTest
 from transcribing.processes.keyword_pr import KeywordIdentityProcess
 
 
 class KeywordProcessTest(BaseTest, TestCase):
->>>>>>> e64f36e (server refactoring)
     def setUp(self) -> None:
         self.alias = 'logs\\123.log'
         self.db_dict = {
@@ -57,16 +44,6 @@ class KeywordProcessTest(BaseTest, TestCase):
             'keywords': 'привет\nхарьков\n^доброе$',
             'percent': 0.01,
         }
-<<<<<<< HEAD
-        option_connections = {}
-        self.keywords = option_task['keywords'].split('\n')
-        logger.add(
-            self.alias,
-            filter=lambda record: self.alias in record["extra"],
-            format="{time} {level} {message}",
-            level="INFO",
-=======
-        self.keywords = self.option_task['keywords'].split('\n')
 
     def test_010_keyword_process(self):
         process = KeywordIdentityProcess('log')
@@ -79,11 +56,10 @@ class KeywordProcessTest(BaseTest, TestCase):
             self.db_dict['db_password'],
             self.db_dict['db_name'],
             self.db_dict['db_system']['name'],
->>>>>>> e64f36e (server refactoring)
         )
         process.setup_options(
             self.option_task['speech_time'],
             self.option_task['percent'],
-            self.keywords,
+            self.option_task['keywords'].split('\n'),
         )
         process.handle_record(28)
